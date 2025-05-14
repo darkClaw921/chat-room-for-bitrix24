@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Union, BinaryIO
 import asyncio
 import logging
 
@@ -6,6 +6,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.types import FSInputFile
 
 from app.config import settings
 from .middleware import register_middlewares
@@ -85,4 +86,28 @@ async def edit_message(chat_id: int, message_id: int, text: str, **kwargs) -> No
     """
     await bot.edit_message_text(
         chat_id=chat_id, message_id=message_id, text=text, **kwargs
+    )
+
+
+async def send_document(chat_id: int, document: Union[str, BinaryIO], caption: Optional[str] = None, **kwargs) -> None:
+    """
+    Отправка файла пользователю
+    
+    Args:
+        chat_id: ID чата
+        document: Путь к файлу или файловый объект
+        caption: Подпись к файлу (опционально)
+    """
+    # Проверяем, является ли document строкой с путем к файлу
+    if isinstance(document, str):
+        document = FSInputFile(document)
+    # Если это файловый объект, нужно закрыть его после использования
+    elif hasattr(document, 'name'):
+        document = FSInputFile(document.name)
+        
+    await bot.send_document(
+        chat_id=chat_id,
+        document=document,
+        caption=caption,
+        **kwargs
     ) 

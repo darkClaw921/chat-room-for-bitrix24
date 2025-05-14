@@ -40,10 +40,15 @@
                 <form id="message-form">
                     <div class="input-group">
                         <input type="text" id="message-input" class="form-control" placeholder="Введите сообщение...">
+                        <label class="btn btn-outline-secondary" for="file-input">
+                            <i class="bi bi-paperclip"></i>
+                        </label>
+                        <input type="file" id="file-input" style="display: none;">
                         <button class="btn btn-primary" type="submit">
                             <i class="bi bi-send"></i>
                         </button>
                     </div>
+                    <div id="selected-file" class="mt-2 small text-muted d-none"></div>
                 </form>
             </div>
         </div>
@@ -201,9 +206,32 @@
                     
                     const messageElement = document.createElement('div');
                     messageElement.className = `message ${messageClass} ${alignClass} mb-3`;
+                    
+                    // Содержимое сообщения в зависимости от типа
+                    let messageContent = '';
+                    
+                    // Проверяем тип сообщения и наличие файла
+                    if (message.message_type === 'document' && message.file_path) {
+                        // Формируем путь к файлу
+                        const filePath = message.file_path;
+                        const fileName = filePath.split('/').pop(); // Получаем только имя файла
+                        
+                        messageContent = `
+                            <div class="message-text mb-2">${message.text || ''}</div>
+                            <div class="document-attachment mb-2">
+                                <a href="/${filePath}" target="_blank" class="btn btn-sm ${isFromManager ? 'btn-light' : 'btn-primary'}">
+                                    <i class="bi bi-file-earmark"></i> ${fileName}
+                                </a>
+                            </div>
+                        `;
+                    } else {
+                        // Обычное текстовое сообщение
+                        messageContent = `<div class="message-text">${message.text}</div>`;
+                    }
+                    
                     messageElement.innerHTML = `
                         <div class="message-content ${bgClass} rounded p-3">
-                            <div class="message-text">${message.text}</div>
+                            ${messageContent}
                             <div class="message-time small text-${isFromManager ? 'light' : 'muted'} text-end">
                                 ${formatDate(message.created_at)}
                                 ${isFromManager && message.is_read ? '<i class="bi bi-check2-all"></i>' : ''}
@@ -254,7 +282,7 @@
         }
         
         // Функция для отправки сообщения
-        async function sendMessage(text) {
+        async function sendMessage(text, file = null) {
             const token = localStorage.getItem('token');
             if (!token) {
                 window.location.href = '/login';
@@ -263,17 +291,29 @@
             
             try {
                 console.log("Отправка сообщения в чат ID:", chatId);
+                
+                const messageData = {
+                    chat_id: chatId,
+                    text: text,
+                    message_type: file ? 'document' : 'text'
+                };
+                
+                // Если есть файл, добавляем его в виде base64
+                if (file) {
+                    const fileBase64 = await fileToBase64(file);
+                    messageData.file = {
+                        name: file.name,
+                        data: fileBase64
+                    };
+                }
+                
                 const response = await fetch('/api/messages/', {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        chat_id: chatId,
-                        text: text,
-                        message_type: 'text'
-                    })
+                    body: JSON.stringify(messageData)
                 });
                 
                 if (!response.ok) {
@@ -284,10 +324,31 @@
                 // Перезагружаем чат
                 loadChat();
                 
+                // Очищаем индикатор файла
+                const selectedFile = safeGetElement('selected-file');
+                if (selectedFile) {
+                    selectedFile.textContent = '';
+                    selectedFile.classList.add('d-none');
+                }
+                
             } catch (error) {
                 console.error('Ошибка при отправке сообщения:', error);
                 alert('Ошибка при отправке сообщения');
             }
+        }
+        
+        // Функция для конвертации файла в base64
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => {
+                    // Удаляем префикс data:application/...;base64,
+                    const base64 = reader.result.split(',')[1];
+                    resolve(base64);
+                };
+                reader.onerror = error => reject(error);
+            });
         }
         
         // Запускаем периодическое обновление чата
@@ -307,6 +368,26 @@
         loadChat();
         startAutoUpdate();
         
+        // Переменная для хранения выбранного файла
+        let selectedFile = null;
+        
+        // Обработчик выбора файла
+        const fileInput = safeGetElement('file-input');
+        if (fileInput) {
+            fileInput.addEventListener('change', function(e) {
+                selectedFile = e.target.files[0] || null;
+                const selectedFileElem = safeGetElement('selected-file');
+                
+                if (selectedFile && selectedFileElem) {
+                    selectedFileElem.textContent = `Выбран файл: ${selectedFile.name}`;
+                    selectedFileElem.classList.remove('d-none');
+                } else if (selectedFileElem) {
+                    selectedFileElem.textContent = '';
+                    selectedFileElem.classList.add('d-none');
+                }
+            });
+        }
+        
         // Обработчик формы отправки сообщения
         const messageForm = safeGetElement('message-form');
         if (messageForm) {
@@ -318,9 +399,14 @@
                 
                 const text = messageInput.value.trim();
                 
-                if (text) {
-                    sendMessage(text);
+                // Отправляем сообщение только если есть текст или файл
+                if (text || selectedFile) {
+                    sendMessage(text, selectedFile);
                     messageInput.value = '';
+                    
+                    // Сбрасываем файл
+                    if (fileInput) fileInput.value = '';
+                    selectedFile = null;
                 }
             });
         }

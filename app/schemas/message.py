@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, Dict
 from datetime import datetime
 
 
@@ -15,6 +15,7 @@ class MessageBase(BaseModel):
 class MessageCreate(MessageBase):
     telegram_user_id: Optional[int] = None
     manager_id: Optional[int] = None
+    file: Optional[Dict[str, str]] = None  # {'name': 'filename.ext', 'data': 'base64string'}
 
 
 class MessageUpdate(BaseModel):

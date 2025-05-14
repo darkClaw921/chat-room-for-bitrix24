@@ -11,3 +11,4 @@ wheels/
 .env
 app.db
 .python-version
+uploads/*

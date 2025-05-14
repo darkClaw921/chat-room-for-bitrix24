@@ -1,4 +1,8 @@
 from typing import Any
+import os
+import base64
+from pathlib import Path
+from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -6,13 +10,37 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_db_dependency
 from app.config import settings
 from app.schemas.webhook import SendMessageRequest, WebhookResponse, ClientMessageRequest
-from app.bot.bot import send_message
+from app.bot.bot import send_message, send_document
 from app.crud.user import telegram_user as crud_telegram_user, user as crud_user
 from app.crud.chat import chat as crud_chat
 from app.crud.message import message as crud_message
 
 
 router = APIRouter()
+
+
+async def save_file_from_base64(file_data: dict) -> str:
+    """Сохраняет файл из base64 данных и возвращает путь к файлу"""
+    if not file_data or 'name' not in file_data or 'data' not in file_data:
+        return None
+    
+    # Создаем директорию uploads, если она не существует
+    upload_dir = Path("uploads")
+    upload_dir.mkdir(exist_ok=True)
+    
+    # Генерируем уникальное имя файла
+    filename = f"{uuid4()}_{file_data['name']}"
+    file_path = upload_dir / filename
+    
+    # Декодируем и сохраняем файл
+    try:
+        file_content = base64.b64decode(file_data['data'])
+        with open(file_path, 'wb') as f:
+            f.write(file_content)
+        return str(file_path)
+    except Exception as e:
+        print(f"Ошибка при сохранении файла: {e}")
+        return None
 
 
 @router.post("/send-message", response_model=WebhookResponse)
@@ -27,11 +55,11 @@ async def send_message_webhook(
     Если пользователя с указанным Telegram ID не существует, он будет создан автоматически.
     Если чата с указанным пользователем не существует, он будет создан автоматически.
     
-    Пример использования с curl:
+    Поддерживает отправку файлов в формате base64:
     ```
     curl -X POST "http://localhost:8000/api/webhook/send-message" \
       -H "Content-Type: application/json" \
-      -d '{"telegram_id": 123456789, "text": "Привет из API!", "token": "your-webhook-api-token"}'
+      -d '{"telegram_id": 123456789, "text": "Привет из API!", "token": "your-webhook-api-token", "file": {"name": "document.pdf", "data": "base64-encoded-content"}}'
     ```
     """
     # Проверяем токен для авторизации запроса
@@ -76,6 +104,15 @@ async def send_message_webhook(
             manager_id=manager.id
         )
         
+        # Обрабатываем файл, если он есть
+        file_path = None
+        message_type = "text"
+        
+        if request.file:
+            file_path = await save_file_from_base64(request.file)
+            if file_path:
+                message_type = "document"
+        
         # Создаем запись о сообщении в базе данных
         message_data = {
             "chat_id": chat.id,
@@ -83,19 +120,28 @@ async def send_message_webhook(
             "is_from_manager": True,  # Сообщение от менеджера
             "manager_id": manager.id,
             "telegram_user_id": telegram_user.id,
-            "message_type": "text"
+            "message_type": message_type,
+            "file_path": file_path
         }
         await crud_message.create_message(db, obj_in=message_data)
         
-        # Отправляем сообщение через Telegram бота
-        await send_message(chat_id=request.telegram_id, text=request.text)
+        # Отправляем сообщение или файл через Telegram бота
+        if file_path and message_type == "document":
+            await send_document(
+                chat_id=request.telegram_id, 
+                document=file_path, 
+                caption=request.text if request.text else None
+            )
+        else:
+            await send_message(chat_id=request.telegram_id, text=request.text)
         
         return WebhookResponse(
             success=True,
             message="Сообщение успешно отправлено",
             data={
                 "telegram_id": request.telegram_id,
-                "chat_id": chat.id
+                "chat_id": chat.id,
+                "file_path": file_path
             }
         )
     except Exception as e:
@@ -118,11 +164,11 @@ async def client_message_webhook(
     Если пользователя с указанным Telegram ID не существует, он будет создан автоматически.
     Если чата с указанным пользователем не существует, он будет создан автоматически.
     
-    Пример использования с curl:
+    Поддерживает отправку файлов в формате base64:
     ```
     curl -X POST "http://localhost:8000/api/webhook/client-message" \
       -H "Content-Type: application/json" \
-      -d '{"telegram_id": 123456789, "text": "Сообщение от клиента", "token": "your-webhook-api-token", "first_name": "Иван", "last_name": "Иванов", "username": "ivanov"}'
+      -d '{"telegram_id": 123456789, "text": "Сообщение от клиента", "token": "your-webhook-api-token", "first_name": "Иван", "last_name": "Иванов", "username": "ivanov", "file": {"name": "document.pdf", "data": "base64-encoded-content"}}'
     ```
     """
     # Проверяем токен для авторизации запроса
@@ -167,13 +213,23 @@ async def client_message_webhook(
             manager_id=manager.id
         )
         
+        # Обрабатываем файл, если он есть
+        file_path = None
+        message_type = "text"
+        
+        if request.file:
+            file_path = await save_file_from_base64(request.file)
+            if file_path:
+                message_type = "document"
+        
         # Создаем запись о сообщении в базе данных
         message_data = {
             "chat_id": chat.id,
             "text": request.text,
             "is_from_manager": False,  # Сообщение от клиента
             "telegram_user_id": telegram_user.id,
-            "message_type": "text"
+            "message_type": message_type,
+            "file_path": file_path
         }
         message = await crud_message.create_message(db, obj_in=message_data)
         
@@ -186,7 +242,8 @@ async def client_message_webhook(
             data={
                 "telegram_id": request.telegram_id,
                 "chat_id": chat.id,
-                "message_id": message.id
+                "message_id": message.id,
+                "file_path": file_path
             }
         )
     except Exception as e:

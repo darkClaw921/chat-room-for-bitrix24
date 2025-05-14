@@ -1,4 +1,8 @@
 from typing import Any, List
+import base64
+import os
+from pathlib import Path
+from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,6 +13,7 @@ from app.schemas.message import Message, MessageCreate, MessageUpdate, MessageOu
 from app.crud.message import message as crud_message
 from app.crud.chat import chat as crud_chat
 from app.bot.bot import send_message as bot_send_message
+from app.bot.bot import send_document as bot_send_document
 
 
 router = APIRouter()
@@ -53,6 +58,30 @@ async def get_messages(
     return messages
 
 
+async def save_file_from_base64(file_data: dict) -> str:
+    """Сохраняет файл из base64 данных и возвращает имя файла"""
+    if not file_data or 'name' not in file_data or 'data' not in file_data:
+        return None
+    
+    # Создаем директорию uploads, если она не существует
+    upload_dir = Path("uploads")
+    upload_dir.mkdir(exist_ok=True)
+    
+    # Генерируем уникальное имя файла
+    filename = f"{uuid4()}_{file_data['name']}"
+    file_path = upload_dir / filename
+    
+    # Декодируем и сохраняем файл
+    try:
+        file_content = base64.b64decode(file_data['data'])
+        with open(file_path, 'wb') as f:
+            f.write(file_content)
+        return str(file_path)
+    except Exception as e:
+        print(f"Ошибка при сохранении файла: {e}")
+        return None
+
+
 @router.post("/", response_model=Message)
 async def create_message(
     message_in: MessageCreate,
@@ -78,9 +107,17 @@ async def create_message(
         )
     
     # Добавляем информацию о менеджере
-    message_data = message_in.model_dump()
+    message_data = message_in.model_dump(exclude={"file"})
     message_data["manager_id"] = current_user.id
     message_data["is_from_manager"] = True
+    
+    # Обрабатываем файл, если он есть
+    file_path = None
+    if message_in.file:
+        file_path = await save_file_from_base64(message_in.file)
+        if file_path:
+            message_data["message_type"] = "document"
+            message_data["file_path"] = file_path
     
     # Создаем сообщение
     message = await crud_message.create_message(db=db, obj_in=message_data)
@@ -88,12 +125,20 @@ async def create_message(
     # Отправляем сообщение в Telegram
     telegram_user = chat.telegram_user
     if telegram_user:
-        # Добавляем задачу в фон для отправки сообщения
-        background_tasks.add_task(
-            bot_send_message,
-            chat_id=telegram_user.telegram_id,
-            text=message.text
-        )
+        # Если есть файл, отправляем его, иначе обычное сообщение
+        if file_path and message_data["message_type"] == "document":
+            background_tasks.add_task(
+                bot_send_document,
+                chat_id=telegram_user.telegram_id, 
+                document=file_path, 
+                caption=message.text if message.text else None
+            )
+        else:
+            background_tasks.add_task(
+                bot_send_message,
+                chat_id=telegram_user.telegram_id,
+                text=message.text
+            )
     
     return message
 

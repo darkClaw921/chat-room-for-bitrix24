@@ -1,7 +1,7 @@
 from datetime import timedelta
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -18,6 +18,7 @@ router = APIRouter()
 
 @router.post("/login", response_model=Token)
 async def login_for_access_token(
+    response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: AsyncSession = Depends(get_db_dependency)
 ) -> Any:
@@ -37,7 +38,63 @@ async def login_for_access_token(
         subject=user.username, expires_delta=access_token_expires
     )
     
+    # Устанавливаем токен в куки
+    max_age = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60  # в секундах
+    response.set_cookie(
+        key="token", 
+        value=access_token, 
+        max_age=max_age,
+        httponly=True,
+        samesite="lax",
+        secure=not settings.DEBUG,  # True в продакшене, False в разработке
+        path="/"
+    )
+    
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+@router.post("/refresh", response_model=Token)
+async def refresh_token(
+    response: Response,
+    current_user: User = Depends(get_current_active_user_dependency)
+) -> Any:
+    """
+    Обновление токена доступа
+    """
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        subject=current_user.username, expires_delta=access_token_expires
+    )
+    
+    # Устанавливаем токен в куки
+    max_age = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60  # в секундах
+    response.set_cookie(
+        key="token", 
+        value=access_token, 
+        max_age=max_age,
+        httponly=True,
+        samesite="lax",
+        secure=not settings.DEBUG,
+        path="/"
+    )
+    
+    return {"access_token": access_token, "token_type": "bearer"}
+
+
+@router.post("/logout")
+async def logout(response: Response):
+    """
+    Выход из системы
+    """
+    # Очистка куки
+    response.delete_cookie(
+        key="token",
+        path="/",
+        secure=not settings.DEBUG,
+        httponly=True,
+        samesite="lax"
+    )
+    return {"message": "Выход выполнен успешно"}
 
 
 @router.get("/me", response_model=UserSchema)
@@ -79,4 +136,4 @@ async def register_user(
     # Создаем пользователя
     user = await crud_user.create(db, obj_in=user_in)
     
-    return user 
+    return user

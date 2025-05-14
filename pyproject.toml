@@ -21,4 +21,5 @@ dependencies = [
     "email-validator",
     "greenlet>=3.2.1",
     "bcrypt>=4.3.0",
+    "requests>=2.32.3",
 ]

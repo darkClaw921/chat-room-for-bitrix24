@@ -1,6 +1,9 @@
 import asyncio
 import logging
+import os
+from pathlib import Path
 from contextlib import asynccontextmanager
+from fastapi.responses import JSONResponse, RedirectResponse
 
 from fastapi import FastAPI, Request, Depends, HTTPException, status
 from fastapi.staticfiles import StaticFiles
@@ -29,6 +32,11 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     # Создаем таблицы в базе данных если их нет
     await create_tables()
+    
+    # Создаем директорию для загрузки файлов, если её нет
+    upload_dir = Path("uploads")
+    upload_dir.mkdir(exist_ok=True)
+    logger.info("Директория для загрузки файлов готова")
     
     # # Запускаем бота если не используется webhook
     # if not settings.WEBHOOK_URL:
@@ -66,6 +74,9 @@ app.add_middleware(
 # Подключаем статические файлы
 app.mount("/static", StaticFiles(directory=settings.STATIC_DIR), name="static")
 
+# Подключаем директорию с загружаемыми файлами
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+
 # Настройка шаблонов
 templates = Jinja2Templates(directory=settings.TEMPLATES_DIR)
 
@@ -86,6 +97,12 @@ async def login_page(request: Request):
     """
     Страница входа
     """
+    # Проверяем, есть ли токен в куках
+    token = request.cookies.get("token")
+    if token:
+        # Если токен есть, перенаправляем на страницу чатов
+        return RedirectResponse(url="/chats")
+    
     return templates.TemplateResponse(
         "auth/login.html", {"request": request, "title": "Вход в систему"}
     )
@@ -173,18 +190,43 @@ async def telegram_webhook(request: Request):
     return {"ok": True}
 
 
+# Обработка ошибки 401 (Unauthorized)
+@app.exception_handler(HTTPException)
+async def unauthorized_exception_handler(request: Request, exc: HTTPException):
+    if exc.status_code == status.HTTP_401_UNAUTHORIZED:
+        # Для XHR запросов возвращаем JSON
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return JSONResponse(
+                status_code=exc.status_code,
+                content={"detail": exc.detail},
+            )
+        # Для обычных запросов перенаправляем на страницу входа
+        if not request.url.path.startswith("/api/"):
+            if request.url.path != "/login":
+                return RedirectResponse(url="/login", status_code=302)
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+    )
+
+
 # Подключаем API маршруты
 app.include_router(api_router, prefix=settings.API_PREFIX)
 
 
 @app.middleware("http")
 async def jwt_cookie_middleware(request: Request, call_next):
-    if "token" in request.cookies:
+    # Проверяем только для API запросов
+    if request.url.path.startswith("/api/") and not request.url.path.startswith("/api/auth/login"):
         # Если токен есть в cookie, добавляем его в заголовок Authorization
-        token = request.cookies.get("token")
-        request.headers.__dict__["_list"].append(
-            (b"authorization", f"Bearer {token}".encode())
-        )
+        if "token" in request.cookies:
+            token = request.cookies.get("token")
+            # Проверяем, нет ли уже заголовка авторизации
+            if not any(h[0].lower() == b"authorization" for h in request.headers.__dict__["_list"]):
+                request.headers.__dict__["_list"].append(
+                    (b"authorization", f"Bearer {token}".encode())
+                )
+    
     response = await call_next(request)
     return response
 

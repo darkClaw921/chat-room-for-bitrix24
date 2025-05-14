@@ -30,6 +30,11 @@
 
 {% block scripts %}
 <script>
+    // Очистка localStorage при загрузке страницы входа для предотвращения конфликтов
+    if (localStorage.getItem('token')) {
+        localStorage.removeItem('token');
+    }
+
     document.getElementById('login-form').addEventListener('submit', async function(e) {
         e.preventDefault();
         
@@ -44,7 +49,8 @@
             
             const response = await fetch('/api/auth/login', {
                 method: 'POST',
-                body: formData
+                body: formData,
+                credentials: 'include' // Для работы с куками
             });
             
             const data = await response.json();
@@ -53,11 +59,8 @@
                 throw new Error(data.detail || 'Ошибка входа');
             }
             
-            // Сохраняем токен в localStorage
+            // Сохраняем токен в localStorage в качестве резервной копии
             localStorage.setItem('token', data.access_token);
-            
-            // Сохраняем токен в cookie
-            document.cookie = `token=${data.access_token}; path=/; max-age=3600; SameSite=Strict`;
             
             // Перенаправляем на страницу с чатами
             window.location.href = '/chats';

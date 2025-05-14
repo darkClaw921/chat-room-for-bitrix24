@@ -1,9 +1,10 @@
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request, Cookie
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from pydantic import ValidationError
+from typing import Union
 
 from app.config import settings
 from app.database import get_db
@@ -12,11 +13,32 @@ from app.schemas import user as user_schemas
 from app.crud import user as user_crud
 from .security import verify_password
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_PREFIX}/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_PREFIX}/auth/login", auto_error=False)
+
+
+async def get_token_from_cookie_or_header(
+    request: Request = None, 
+    token_from_header: str = Depends(oauth2_scheme),
+    token: str = Cookie(default=None)
+) -> Optional[str]:
+    """
+    Получить токен из куки или заголовка
+    """
+    # Сначала проверяем token из заголовка
+    if token_from_header:
+        return token_from_header
+    
+    # Затем проверяем token из куки
+    if token:
+        return token
+        
+    # Если нет ни в заголовке, ни в куки, возвращаем None
+    return None
 
 
 async def get_current_user(
-    db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)
+    db: AsyncSession = Depends(get_db), 
+    token: str = Depends(get_token_from_cookie_or_header)
 ) -> user_models.User:
     """
     Получить текущего авторизованного пользователя
@@ -26,6 +48,10 @@ async def get_current_user(
         detail="Не удалось проверить учетные данные",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    
+    # Если токена нет, сразу выбрасываем исключение
+    if not token:
+        raise credentials_exception
     
     try:
         payload = jwt.decode(
