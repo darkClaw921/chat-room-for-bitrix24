@@ -1,0 +1,332 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Чаты</h1>
+    <div class="input-group" style="max-width: 300px;">
+        <input type="text" id="search-input" class="form-control" placeholder="Поиск чатов...">
+        <button class="btn btn-primary" type="button" id="search-button">
+            <i class="bi bi-search"></i>
+        </button>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush" id="chats-list">
+                    <!-- Чаты будут загружены через JavaScript -->
+                    <div class="text-center py-5" id="loading">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Загрузка...</span>
+                        </div>
+                        <p class="mt-2">Загрузка чатов...</p>
+                    </div>
+                    <div class="text-center py-5 d-none" id="no-chats">
+                        <i class="bi bi-chat-dots display-4 text-muted"></i>
+                        <p class="mt-2">У вас пока нет активных чатов</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Интервал для периодического обновления списка чатов
+    let updateInterval = null;
+    // Флаг активного поиска
+    let isSearchActive = false;
+    // Последний поисковый запрос
+    let lastSearchQuery = '';
+
+    // Функция для форматирования даты
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        
+        if (date >= today) {
+            // Сегодня - показываем только время
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        } else if (date >= yesterday) {
+            // Вчера
+            return 'Вчера';
+        } else {
+            // Другие дни - показываем дату
+            return date.toLocaleDateString();
+        }
+    }
+    
+    // Функция для загрузки чатов
+    async function loadChats() {
+        if (isSearchActive) return; // Не обновляем, если активен поиск
+        
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login';
+            return;
+        }
+        
+        try {
+            const response = await fetch('/api/chats/', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            if (!response.ok) {
+                if (response.status === 401) {
+                    // Токен недействителен
+                    localStorage.removeItem('token');
+                    window.location.href = '/login';
+                    return;
+                }
+                throw new Error('Ошибка при загрузке чатов');
+            }
+            
+            const chats = await response.json();
+            
+            const chatsList = document.getElementById('chats-list');
+            const loading = document.getElementById('loading');
+            const noChats = document.getElementById('no-chats');
+            
+            loading.classList.add('d-none');
+            
+            if (chats.length === 0) {
+                noChats.classList.remove('d-none');
+                return;
+            }
+            
+            // Очищаем список
+            chatsList.innerHTML = '';
+            
+            // Добавляем чаты в список
+            chats.forEach(chat => {
+                const lastMessageText = chat.last_message ? 
+                    (chat.last_message.is_from_manager ? 'Вы: ' : '') + chat.last_message.text : 
+                    'Нет сообщений';
+                
+                const lastMessageDate = chat.last_message ? 
+                    formatDate(chat.last_message.created_at) : '';
+                
+                const chatName = chat.title || 
+                    (chat.telegram_user ? 
+                        (chat.telegram_user.username ? 
+                            '@' + chat.telegram_user.username : 
+                            chat.telegram_user.first_name + (chat.telegram_user.last_name ? ' ' + chat.telegram_user.last_name : '')
+                        ) : 
+                        'Неизвестный пользователь'
+                    );
+                
+                const unreadBadge = chat.unread_count > 0 ? 
+                    `<span class="badge bg-primary rounded-pill">${chat.unread_count}</span>` : 
+                    '';
+                
+                const chatItem = document.createElement('a');
+                chatItem.href = `/chats/${chat.id}`;
+                chatItem.className = 'list-group-item list-group-item-action';
+                chatItem.innerHTML = `
+                    <div class="d-flex w-100 justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-1">${chatName}</h5>
+                            <p class="mb-1 text-truncate" style="max-width: 500px;">${lastMessageText}</p>
+                        </div>
+                        <div class="text-end">
+                            <small class="text-muted d-block">${lastMessageDate}</small>
+                            ${unreadBadge}
+                        </div>
+                    </div>
+                `;
+                
+                chatsList.appendChild(chatItem);
+            });
+            
+        } catch (error) {
+            console.error('Ошибка:', error);
+            const chatsList = document.getElementById('chats-list');
+            const loading = document.getElementById('loading');
+            
+            loading.classList.add('d-none');
+            chatsList.innerHTML = `
+                <div class="text-center py-5">
+                    <i class="bi bi-exclamation-triangle display-4 text-danger"></i>
+                    <p class="mt-2">Ошибка при загрузке чатов</p>
+                    <button class="btn btn-primary" onclick="loadChats()">Повторить</button>
+                </div>
+            `;
+        }
+    }
+    
+    // Функция для поиска чатов
+    async function searchChats(query) {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login';
+            return;
+        }
+        
+        // Устанавливаем флаг поиска
+        isSearchActive = !!query;
+        lastSearchQuery = query;
+        
+        try {
+            const response = await fetch(`/api/chats/search/?query=${encodeURIComponent(query)}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Ошибка при поиске чатов');
+            }
+            
+            const chats = await response.json();
+            
+            const chatsList = document.getElementById('chats-list');
+            const noChats = document.getElementById('no-chats');
+            
+            // Очищаем список
+            chatsList.innerHTML = '';
+            
+            if (chats.length === 0) {
+                chatsList.innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="bi bi-search display-4 text-muted"></i>
+                        <p class="mt-2">Ничего не найдено по запросу "${query}"</p>
+                        <button class="btn btn-outline-primary" onclick="resetSearch()">Показать все чаты</button>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Добавляем найденные чаты в список
+            chats.forEach(chat => {
+                const lastMessageText = chat.last_message ? 
+                    (chat.last_message.is_from_manager ? 'Вы: ' : '') + chat.last_message.text : 
+                    'Нет сообщений';
+                
+                const lastMessageDate = chat.last_message ? 
+                    formatDate(chat.last_message.created_at) : '';
+                
+                const chatName = chat.title || 
+                    (chat.telegram_user ? 
+                        (chat.telegram_user.username ? 
+                            '@' + chat.telegram_user.username : 
+                            chat.telegram_user.first_name + (chat.telegram_user.last_name ? ' ' + chat.telegram_user.last_name : '')
+                        ) : 
+                        'Неизвестный пользователь'
+                    );
+                
+                const unreadBadge = chat.unread_count > 0 ? 
+                    `<span class="badge bg-primary rounded-pill">${chat.unread_count}</span>` : 
+                    '';
+                
+                const chatItem = document.createElement('a');
+                chatItem.href = `/chats/${chat.id}`;
+                chatItem.className = 'list-group-item list-group-item-action';
+                chatItem.innerHTML = `
+                    <div class="d-flex w-100 justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-1">${chatName}</h5>
+                            <p class="mb-1 text-truncate" style="max-width: 500px;">${lastMessageText}</p>
+                        </div>
+                        <div class="text-end">
+                            <small class="text-muted d-block">${lastMessageDate}</small>
+                            ${unreadBadge}
+                        </div>
+                    </div>
+                `;
+                
+                chatsList.appendChild(chatItem);
+            });
+            
+        } catch (error) {
+            console.error('Ошибка:', error);
+            const chatsList = document.getElementById('chats-list');
+            
+            chatsList.innerHTML = `
+                <div class="text-center py-5">
+                    <i class="bi bi-exclamation-triangle display-4 text-danger"></i>
+                    <p class="mt-2">Ошибка при поиске чатов</p>
+                    <button class="btn btn-primary" onclick="resetSearch()">Показать все чаты</button>
+                </div>
+            `;
+        }
+    }
+    
+    // Функция для сброса поиска
+    function resetSearch() {
+        isSearchActive = false;
+        lastSearchQuery = '';
+        document.getElementById('search-input').value = '';
+        loadChats();
+    }
+    
+    // Запускаем периодическое обновление списка чатов
+    function startAutoUpdate() {
+        // Очищаем существующий интервал, если есть
+        if (updateInterval) {
+            clearInterval(updateInterval);
+        }
+        
+        // Устанавливаем новый интервал (обновление каждые 10 секунд)
+        updateInterval = setInterval(() => {
+            if (isSearchActive) {
+                // Если активен поиск, обновляем результаты поиска
+                searchChats(lastSearchQuery);
+            } else {
+                // Иначе обновляем общий список чатов
+                loadChats();
+            }
+        }, 10000);
+    }
+    
+    // Загружаем чаты при загрузке страницы
+    document.addEventListener('DOMContentLoaded', function() {
+        loadChats();
+        startAutoUpdate();
+    });
+    
+    // Обработчик поиска
+    document.getElementById('search-button').addEventListener('click', function() {
+        const query = document.getElementById('search-input').value.trim();
+        if (query) {
+            searchChats(query);
+        } else {
+            resetSearch();
+        }
+    });
+    
+    // Обработчик нажатия Enter в поле поиска
+    document.getElementById('search-input').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            const query = this.value.trim();
+            if (query) {
+                searchChats(query);
+            } else {
+                resetSearch();
+            }
+        }
+    });
+    
+    // Обработчик для видимости вкладки (останавливаем обновление, когда вкладка неактивна)
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'visible') {
+            if (isSearchActive) {
+                searchChats(lastSearchQuery);
+            } else {
+                loadChats();
+            }
+            startAutoUpdate();
+        } else {
+            clearInterval(updateInterval);
+        }
+    });
+</script>
+{% endblock %} 

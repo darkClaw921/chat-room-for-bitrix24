@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 text-center">
+        <h1 class="display-4 mb-4">Добро пожаловать в Чат-комнату Bitrix24</h1>
+        <p class="lead mb-5">
+            Система для общения менеджеров с клиентами через Telegram. 
+            Менеджеры отвечают от лица бота, а клиенты общаются через свой Telegram аккаунт.
+        </p>
+        
+        {% if not user %}
+        <div class="d-flex justify-content-center gap-3">
+            <a href="/login" class="btn btn-primary btn-lg">
+                <i class="bi bi-box-arrow-in-right"></i> Войти в систему
+            </a>
+        </div>
+        {% else %}
+        <div class="d-flex justify-content-center gap-3">
+            <a href="/chats" class="btn btn-primary btn-lg">
+                <i class="bi bi-chat-dots"></i> Перейти к чатам
+            </a>
+            <a href="/events" class="btn btn-outline-primary btn-lg">
+                <i class="bi bi-gear"></i> Настроить события
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row mt-5">
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-chat-dots display-4 text-primary mb-3"></i>
+                <h3 class="card-title">Чаты с клиентами</h3>
+                <p class="card-text">Удобный интерфейс для общения с клиентами через Telegram бота</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-database display-4 text-primary mb-3"></i>
+                <h3 class="card-title">История сообщений</h3>
+                <p class="card-text">Все сообщения сохраняются в базе данных для последующего анализа</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-gear display-4 text-primary mb-3"></i>
+                <h3 class="card-title">Автоматизация</h3>
+                <p class="card-text">Настройка автоматических действий на определенные события</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

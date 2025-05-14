@@ -1,0 +1,76 @@
+/* Основные стили */
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
+}
+
+footer {
+    margin-top: auto;
+}
+
+/* Стили для чата */
+.chat-messages {
+    height: 500px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.message {
+    max-width: 70%;
+    margin-bottom: 1rem;
+}
+
+.message-outgoing {
+    align-self: flex-end;
+}
+
+.message-incoming {
+    align-self: flex-start;
+}
+
+.message-content {
+    border-radius: 1rem;
+    padding: 0.75rem;
+    position: relative;
+}
+
+/* Стили для темного режима */
+[data-bs-theme="dark"] .bg-light {
+    background-color: #343a40 !important;
+}
+
+[data-bs-theme="dark"] .text-muted {
+    color: #adb5bd !important;
+}
+
+[data-bs-theme="dark"] .footer {
+    background-color: #212529 !important;
+}
+
+[data-bs-theme="dark"] .footer .text-muted {
+    color: #adb5bd !important;
+}
+
+/* Анимации */
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .chat-messages {
+        height: 400px;
+    }
+    
+    .message {
+        max-width: 85%;
+    }
+} 

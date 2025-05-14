@@ -1,0 +1,643 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>События</h1>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addEventModal">
+        <i class="bi bi-plus-circle"></i> Добавить событие
+    </button>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Название</th>
+                                <th>Тип события</th>
+                                <th>Действие</th>
+                                <th>Статус</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="events-table-body">
+                            <!-- События будут загружены через JavaScript -->
+                            <tr>
+                                <td colspan="5" class="text-center py-4">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Загрузка...</span>
+                                    </div>
+                                    <p class="mt-2">Загрузка событий...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="text-center py-5 d-none" id="no-events">
+                    <i class="bi bi-gear display-4 text-muted"></i>
+                    <p class="mt-2">У вас пока нет настроенных событий</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно добавления события -->
+<div class="modal fade" id="addEventModal" tabindex="-1" aria-labelledby="addEventModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addEventModalLabel">Добавление события</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="event-form">
+                    <div class="mb-3">
+                        <label for="event-name" class="form-label">Название события</label>
+                        <input type="text" class="form-control" id="event-name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="event-description" class="form-label">Описание</label>
+                        <textarea class="form-control" id="event-description" rows="2"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="event-type" class="form-label">Тип события</label>
+                        <select class="form-select" id="event-type" required>
+                            <option value="">Выберите тип события</option>
+                            <option value="new_message">Новое сообщение</option>
+                            <option value="user_joined">Новый пользователь</option>
+                            <option value="keyword">Ключевое слово в сообщении</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Условия для типа события "keyword" -->
+                    <div class="mb-3 d-none" id="keyword-condition">
+                        <label for="keyword-text" class="form-label">Ключевое слово или фраза</label>
+                        <input type="text" class="form-control" id="keyword-text">
+                        <div class="form-text">Событие сработает, если сообщение содержит указанный текст</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="action-type" class="form-label">Действие</label>
+                        <select class="form-select" id="action-type" required>
+                            <option value="">Выберите действие</option>
+                            <option value="send_message">Отправить сообщение</option>
+                            <option value="notify_manager">Уведомить менеджера</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Настройки для действия "send_message" -->
+                    <div class="mb-3 d-none" id="send-message-action">
+                        <label for="message-text" class="form-label">Текст сообщения</label>
+                        <textarea class="form-control" id="message-text" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="event-active" checked>
+                        <label class="form-check-label" for="event-active">Событие активно</label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="save-event-btn">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно редактирования события -->
+<div class="modal fade" id="editEventModal" tabindex="-1" aria-labelledby="editEventModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editEventModalLabel">Редактирование события</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-event-form">
+                    <input type="hidden" id="edit-event-id">
+                    <div class="mb-3">
+                        <label for="edit-event-name" class="form-label">Название события</label>
+                        <input type="text" class="form-control" id="edit-event-name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-event-description" class="form-label">Описание</label>
+                        <textarea class="form-control" id="edit-event-description" rows="2"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-event-type" class="form-label">Тип события</label>
+                        <select class="form-select" id="edit-event-type" required>
+                            <option value="">Выберите тип события</option>
+                            <option value="new_message">Новое сообщение</option>
+                            <option value="user_joined">Новый пользователь</option>
+                            <option value="keyword">Ключевое слово в сообщении</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Условия для типа события "keyword" -->
+                    <div class="mb-3 d-none" id="edit-keyword-condition">
+                        <label for="edit-keyword-text" class="form-label">Ключевое слово или фраза</label>
+                        <input type="text" class="form-control" id="edit-keyword-text">
+                        <div class="form-text">Событие сработает, если сообщение содержит указанный текст</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="edit-action-type" class="form-label">Действие</label>
+                        <select class="form-select" id="edit-action-type" required>
+                            <option value="">Выберите действие</option>
+                            <option value="send_message">Отправить сообщение</option>
+                            <option value="notify_manager">Уведомить менеджера</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Настройки для действия "send_message" -->
+                    <div class="mb-3 d-none" id="edit-send-message-action">
+                        <label for="edit-message-text" class="form-label">Текст сообщения</label>
+                        <textarea class="form-control" id="edit-message-text" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="edit-event-active">
+                        <label class="form-check-label" for="edit-event-active">Событие активно</label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="update-event-btn">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Загрузка событий
+    async function loadEvents() {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login';
+            return;
+        }
+        
+        try {
+            const response = await fetch('/api/events/', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            if (!response.ok) {
+                if (response.status === 401) {
+                    localStorage.removeItem('token');
+                    window.location.href = '/login';
+                    return;
+                }
+                throw new Error('Ошибка при загрузке событий');
+            }
+            
+            const events = await response.json();
+            const tableBody = document.getElementById('events-table-body');
+            const noEvents = document.getElementById('no-events');
+            
+            // Очищаем таблицу
+            tableBody.innerHTML = '';
+            
+            if (events.length === 0) {
+                tableBody.innerHTML = '';
+                noEvents.classList.remove('d-none');
+                return;
+            } else {
+                noEvents.classList.add('d-none');
+            }
+            
+            // Добавляем события в таблицу
+            events.forEach(event => {
+                const row = document.createElement('tr');
+                
+                // Преобразуем типы событий и действий для отображения
+                const eventTypeMap = {
+                    'new_message': 'Новое сообщение',
+                    'user_joined': 'Новый пользователь',
+                    'keyword': 'Ключевое слово'
+                };
+                
+                const actionTypeMap = {
+                    'send_message': 'Отправить сообщение',
+                    'notify_manager': 'Уведомить менеджера'
+                };
+                
+                const eventType = eventTypeMap[event.event_type] || event.event_type;
+                const actionType = actionTypeMap[event.action_type] || event.action_type;
+                
+                // Создаем бейдж для статуса
+                const statusBadge = event.is_active ? 
+                    '<span class="badge bg-success">Активно</span>' : 
+                    '<span class="badge bg-secondary">Неактивно</span>';
+                
+                row.innerHTML = `
+                    <td>${event.name}</td>
+                    <td>${eventType}</td>
+                    <td>${actionType}</td>
+                    <td>${statusBadge}</td>
+                    <td>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button" class="btn btn-outline-primary edit-event" data-event-id="${event.id}">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button type="button" class="btn btn-outline-danger delete-event" data-event-id="${event.id}">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                            <button type="button" class="btn btn-outline-${event.is_active ? 'warning' : 'success'} toggle-event" data-event-id="${event.id}" data-event-active="${event.is_active}">
+                                <i class="bi bi-${event.is_active ? 'pause' : 'play'}"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+            
+            // Добавляем обработчики для кнопок
+            addEventButtonHandlers();
+            
+        } catch (error) {
+            console.error('Ошибка:', error);
+            const tableBody = document.getElementById('events-table-body');
+            
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="text-center py-4">
+                        <i class="bi bi-exclamation-triangle display-4 text-danger"></i>
+                        <p class="mt-2">Ошибка при загрузке событий</p>
+                        <button class="btn btn-primary" onclick="loadEvents()">Повторить</button>
+                    </td>
+                </tr>
+            `;
+        }
+    }
+    
+    // Добавление обработчиков для кнопок событий
+    function addEventButtonHandlers() {
+        // Обработчики для кнопок редактирования
+        document.querySelectorAll('.edit-event').forEach(button => {
+            button.addEventListener('click', function() {
+                const eventId = this.getAttribute('data-event-id');
+                openEditEventModal(eventId);
+            });
+        });
+        
+        // Обработчики для кнопок удаления
+        document.querySelectorAll('.delete-event').forEach(button => {
+            button.addEventListener('click', function() {
+                const eventId = this.getAttribute('data-event-id');
+                deleteEvent(eventId);
+            });
+        });
+        
+        // Обработчики для кнопок активации/деактивации
+        document.querySelectorAll('.toggle-event').forEach(button => {
+            button.addEventListener('click', function() {
+                const eventId = this.getAttribute('data-event-id');
+                const isActive = this.getAttribute('data-event-active') === 'true';
+                toggleEventStatus(eventId, isActive);
+            });
+        });
+    }
+    
+    // Открытие модального окна редактирования события
+    async function openEditEventModal(eventId) {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login';
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/api/events/${eventId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Ошибка при загрузке события');
+            }
+            
+            const event = await response.json();
+            
+            // Заполняем форму данными события
+            document.getElementById('edit-event-id').value = event.id;
+            document.getElementById('edit-event-name').value = event.name;
+            document.getElementById('edit-event-description').value = event.description || '';
+            document.getElementById('edit-event-type').value = event.event_type;
+            document.getElementById('edit-action-type').value = event.action_type;
+            document.getElementById('edit-event-active').checked = event.is_active;
+            
+            // Показываем/скрываем дополнительные поля в зависимости от типа события
+            if (event.event_type === 'keyword') {
+                document.getElementById('edit-keyword-condition').classList.remove('d-none');
+                document.getElementById('edit-keyword-text').value = event.conditions?.text_contains || '';
+            } else {
+                document.getElementById('edit-keyword-condition').classList.add('d-none');
+            }
+            
+            // Показываем/скрываем дополнительные поля в зависимости от типа действия
+            if (event.action_type === 'send_message') {
+                document.getElementById('edit-send-message-action').classList.remove('d-none');
+                document.getElementById('edit-message-text').value = event.action_data?.text || '';
+            } else {
+                document.getElementById('edit-send-message-action').classList.add('d-none');
+            }
+            
+            // Открываем модальное окно
+            const editModal = new bootstrap.Modal(document.getElementById('editEventModal'));
+            editModal.show();
+            
+        } catch (error) {
+            console.error('Ошибка:', error);
+            alert('Ошибка при загрузке события');
+        }
+    }
+    
+    // Удаление события
+    async function deleteEvent(eventId) {
+        if (!confirm('Вы уверены, что хотите удалить это событие?')) {
+            return;
+        }
+        
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login';
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/api/events/${eventId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Ошибка при удалении события');
+            }
+            
+            // Перезагружаем список событий
+            loadEvents();
+            
+        } catch (error) {
+            console.error('Ошибка:', error);
+            alert('Ошибка при удалении события');
+        }
+    }
+    
+    // Изменение статуса события (активно/неактивно)
+    async function toggleEventStatus(eventId, isActive) {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login';
+            return;
+        }
+        
+        try {
+            const url = `/api/events/${eventId}/${isActive ? 'deactivate' : 'activate'}`;
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Ошибка при изменении статуса события');
+            }
+            
+            // Перезагружаем список событий
+            loadEvents();
+            
+        } catch (error) {
+            console.error('Ошибка:', error);
+            alert('Ошибка при изменении статуса события');
+        }
+    }
+    
+    // Создание нового события
+    async function createEvent() {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login';
+            return;
+        }
+        
+        // Получаем данные из формы
+        const name = document.getElementById('event-name').value;
+        const description = document.getElementById('event-description').value;
+        const eventType = document.getElementById('event-type').value;
+        const actionType = document.getElementById('action-type').value;
+        const isActive = document.getElementById('event-active').checked;
+        
+        // Проверяем обязательные поля
+        if (!name || !eventType || !actionType) {
+            alert('Пожалуйста, заполните все обязательные поля');
+            return;
+        }
+        
+        // Формируем данные события
+        const eventData = {
+            name,
+            description,
+            event_type: eventType,
+            action_type: actionType,
+            is_active: isActive
+        };
+        
+        // Добавляем условия в зависимости от типа события
+        if (eventType === 'keyword') {
+            const keywordText = document.getElementById('keyword-text').value;
+            if (!keywordText) {
+                alert('Пожалуйста, укажите ключевое слово');
+                return;
+            }
+            eventData.conditions = {
+                text_contains: keywordText
+            };
+        }
+        
+        // Добавляем данные действия в зависимости от типа
+        if (actionType === 'send_message') {
+            const messageText = document.getElementById('message-text').value;
+            if (!messageText) {
+                alert('Пожалуйста, укажите текст сообщения');
+                return;
+            }
+            eventData.action_data = {
+                text: messageText
+            };
+        }
+        
+        try {
+            const response = await fetch('/api/events/', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(eventData)
+            });
+            
+            if (!response.ok) {
+                throw new Error('Ошибка при создании события');
+            }
+            
+            // Закрываем модальное окно
+            const modal = bootstrap.Modal.getInstance(document.getElementById('addEventModal'));
+            modal.hide();
+            
+            // Очищаем форму
+            document.getElementById('event-form').reset();
+            
+            // Перезагружаем список событий
+            loadEvents();
+            
+        } catch (error) {
+            console.error('Ошибка:', error);
+            alert('Ошибка при создании события');
+        }
+    }
+    
+    // Обновление события
+    async function updateEvent() {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login';
+            return;
+        }
+        
+        // Получаем данные из формы
+        const eventId = document.getElementById('edit-event-id').value;
+        const name = document.getElementById('edit-event-name').value;
+        const description = document.getElementById('edit-event-description').value;
+        const eventType = document.getElementById('edit-event-type').value;
+        const actionType = document.getElementById('edit-action-type').value;
+        const isActive = document.getElementById('edit-event-active').checked;
+        
+        // Проверяем обязательные поля
+        if (!name || !eventType || !actionType) {
+            alert('Пожалуйста, заполните все обязательные поля');
+            return;
+        }
+        
+        // Формируем данные события
+        const eventData = {
+            name,
+            description,
+            event_type: eventType,
+            action_type: actionType,
+            is_active: isActive
+        };
+        
+        // Добавляем условия в зависимости от типа события
+        if (eventType === 'keyword') {
+            const keywordText = document.getElementById('edit-keyword-text').value;
+            if (!keywordText) {
+                alert('Пожалуйста, укажите ключевое слово');
+                return;
+            }
+            eventData.conditions = {
+                text_contains: keywordText
+            };
+        }
+        
+        // Добавляем данные действия в зависимости от типа
+        if (actionType === 'send_message') {
+            const messageText = document.getElementById('edit-message-text').value;
+            if (!messageText) {
+                alert('Пожалуйста, укажите текст сообщения');
+                return;
+            }
+            eventData.action_data = {
+                text: messageText
+            };
+        }
+        
+        try {
+            const response = await fetch(`/api/events/${eventId}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(eventData)
+            });
+            
+            if (!response.ok) {
+                throw new Error('Ошибка при обновлении события');
+            }
+            
+            // Закрываем модальное окно
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editEventModal'));
+            modal.hide();
+            
+            // Перезагружаем список событий
+            loadEvents();
+            
+        } catch (error) {
+            console.error('Ошибка:', error);
+            alert('Ошибка при обновлении события');
+        }
+    }
+    
+    // Обработчики изменения типа события
+    function handleEventTypeChange(selectId, conditionId) {
+        const select = document.getElementById(selectId);
+        const condition = document.getElementById(conditionId);
+        
+        select.addEventListener('change', function() {
+            if (this.value === 'keyword') {
+                condition.classList.remove('d-none');
+            } else {
+                condition.classList.add('d-none');
+            }
+        });
+    }
+    
+    // Обработчики изменения типа действия
+    function handleActionTypeChange(selectId, actionId) {
+        const select = document.getElementById(selectId);
+        const action = document.getElementById(actionId);
+        
+        select.addEventListener('change', function() {
+            if (this.value === 'send_message') {
+                action.classList.remove('d-none');
+            } else {
+                action.classList.add('d-none');
+            }
+        });
+    }
+    
+    // Инициализация
+    document.addEventListener('DOMContentLoaded', function() {
+        // Загружаем события
+        loadEvents();
+        
+        // Добавляем обработчики изменения типов
+        handleEventTypeChange('event-type', 'keyword-condition');
+        handleEventTypeChange('edit-event-type', 'edit-keyword-condition');
+        handleActionTypeChange('action-type', 'send-message-action');
+        handleActionTypeChange('edit-action-type', 'edit-send-message-action');
+        
+        // Обработчик сохранения нового события
+        document.getElementById('save-event-btn').addEventListener('click', createEvent);
+        
+        // Обработчик обновления события
+        document.getElementById('update-event-btn').addEventListener('click', updateEvent);
+    });
+</script>
+{% endblock %} 

@@ -1,0 +1,40 @@
+#!/bin/bash
+
+# Примеры команд curl для работы с webhook API чата
+
+# 1. Отправка сообщения от менеджера клиенту
+# Этот запрос имитирует отправку сообщения от менеджера клиенту через внешнюю систему
+curl -X POST "http://localhost:8000/api/webhook/send-message" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "telegram_id": 123456789, 
+    "text": "Здравствуйте! Это сообщение от менеджера через API.", 
+    "token": "your-webhook-api-token"
+  }'
+
+# 2. Отправка сообщения от клиента менеджеру
+# Этот запрос имитирует отправку сообщения от клиента в систему
+# curl -X POST "http://localhost:8000/api/webhook/client-message" \
+curl -X POST "http://178.234.10.41:8000/api/webhook/client-message" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "telegram_id": 400923372, 
+    "text": "Здравствуйте! Это сообщение от клиента через API.", 
+    "token": "your-secret-api-token-here", 
+    "first_name": "Иван", 
+    "last_name": "Иванов", 
+    "username": "ivanov"
+  }'
+
+# 3. Отправка сообщения от клиента менеджеру без дополнительных данных
+# В этом случае будут использованы значения по умолчанию или данные из существующей записи пользователя
+curl -X POST "http://localhost:8000/api/webhook/client-message" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "telegram_id": 123456789, 
+    "text": "Это еще одно сообщение от клиента.", 
+    "token": "your-webhook-api-token"
+  }'
+
+# Примечание: замените "your-webhook-api-token" на актуальный токен из .env файла
+# и при необходимости измените URL, если ваш сервер запущен на другом порту или адресе. 

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white text-center">
+                <h4 class="mb-0">Вход в систему</h4>
+            </div>
+            <div class="card-body">
+                <form id="login-form">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Имя пользователя</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Пароль</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <div class="alert alert-danger d-none" id="login-error"></div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">Войти</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.getElementById('login-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        const errorElement = document.getElementById('login-error');
+        
+        try {
+            const formData = new FormData();
+            formData.append('username', username);
+            formData.append('password', password);
+            
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.detail || 'Ошибка входа');
+            }
+            
+            // Сохраняем токен в localStorage
+            localStorage.setItem('token', data.access_token);
+            
+            // Сохраняем токен в cookie
+            document.cookie = `token=${data.access_token}; path=/; max-age=3600; SameSite=Strict`;
+            
+            // Перенаправляем на страницу с чатами
+            window.location.href = '/chats';
+            
+        } catch (error) {
+            // Показываем ошибку
+            errorElement.textContent = error.message;
+            errorElement.classList.remove('d-none');
+        }
+    });
+</script>
+{% endblock %} 
