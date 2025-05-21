@@ -1,9 +1,11 @@
 from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, DateTime
 from sqlalchemy.ext.declarative import declared_attr
+from sqlalchemy.orm import declarative_base
 
-from app.database import Base
+# from app.database import Base
 
+Base = declarative_base()
 
 class BaseModel(Base):
     """

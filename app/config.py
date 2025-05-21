@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     
     # Настройки базы данных
     DATABASE_URL: str = "sqlite:///./app.db"
+    ADMIN_USERNAME: str = "admin"
+    ADMIN_EMAIL: str = "admin@example.com"
+    ADMIN_PASSWORD: str = "admin"
     
     # Настройки Telegram бота
     TELEGRAM_BOT_TOKEN: str

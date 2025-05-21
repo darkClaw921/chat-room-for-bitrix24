@@ -64,6 +64,7 @@ chat-room-for-bitrix24/
 1. **User** - Менеджеры системы (сотрудники Bitrix24)
    - Атрибуты: id, username, email, hashed_password, is_active, is_admin
    - Отношения: chats (один-ко-многим)
+   - **Примечание**: При первой инициализации базы данных автоматически создается пользователь администратор с учетными данными, указанными в переменных окружения (ADMIN_USERNAME, ADMIN_PASSWORD, ADMIN_EMAIL), если он еще не существует.
 
 2. **TelegramUser** - Клиенты, использующие Telegram
    - Атрибуты: id, telegram_id, username, first_name, last_name, language_code, info
