@@ -3,6 +3,7 @@ import base64
 import os
 from pathlib import Path
 from uuid import uuid4
+import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,7 +15,10 @@ from app.crud.message import message as crud_message
 from app.crud.chat import chat as crud_chat
 from app.bot.bot import send_message as bot_send_message
 from app.bot.bot import send_document as bot_send_document
+from app.api.endpoints.workBitrix import mark_message_as_read as bitrix_mark_read
 
+# Настройка логирования
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -49,8 +53,18 @@ async def get_messages(
         db=db, chat_id=chat_id, skip=skip, limit=limit
     )
     
-    # Отмечаем сообщения как прочитанные
+    # Отмечаем сообщения как прочитанные в базе данных
     await crud_message.mark_all_as_read(db=db, chat_id=chat_id)
+    
+    # Отмечаем все сообщения как прочитанные в системе уведомлений Bitrix
+    marked_count = 0
+    for message in messages:
+        if not message.is_read and not message.is_from_manager:
+            result = bitrix_mark_read(message.id)
+            if result:
+                marked_count += 1
+    
+    logger.info(f"Отмечено {marked_count} непрочитанных сообщений при загрузке чата {chat_id}")
     
     # Сбрасываем счетчик непрочитанных сообщений
     await crud_chat.reset_unread_count(db=db, chat_id=chat_id)
@@ -200,7 +214,12 @@ async def mark_message_as_read(
             detail="Нет доступа к этому сообщению",
         )
     
-    # Отмечаем сообщение как прочитанное
+    # Отмечаем сообщение как прочитанное в системе уведомлений Bitrix
+    if not message.is_read and not message.is_from_manager:
+        result = bitrix_mark_read(message_id)
+        logger.info(f"Сообщение {message_id} отмечено как прочитанное в Bitrix: {result}")
+    
+    # Отмечаем сообщение как прочитанное в базе данных
     message = await crud_message.mark_as_read(db=db, message_id=message_id)
     
     return message 

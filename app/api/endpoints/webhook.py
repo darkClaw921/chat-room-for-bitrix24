@@ -3,6 +3,8 @@ import os
 import base64
 from pathlib import Path
 from uuid import uuid4
+import asyncio
+import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,7 +16,10 @@ from app.bot.bot import send_message, send_document
 from app.crud.user import telegram_user as crud_telegram_user, user as crud_user
 from app.crud.chat import chat as crud_chat
 from app.crud.message import message as crud_message
+from app.api.endpoints.workBitrix import schedule_notification
 
+# Настройка логирования
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -236,6 +241,14 @@ async def client_message_webhook(
         # Увеличиваем счетчик непрочитанных сообщений
         await crud_chat.increment_unread_count(db, chat_id=chat.id)
         
+        # Планируем отправку уведомления, если сообщение не будет прочитано через 10 секунд
+        logger.info(f"Планирование уведомления из webhook для telegram_id: {request.telegram_id}, message_id: {message.id}")
+        asyncio.create_task(schedule_notification(
+            telegram_id=request.telegram_id,
+            message_id=message.id,
+            chat_id=chat.id
+        ))
+        
         return WebhookResponse(
             success=True,
             message="Сообщение от клиента принято",
@@ -247,6 +260,7 @@ async def client_message_webhook(
             }
         )
     except Exception as e:
+        logger.error(f"Ошибка при обработке сообщения от клиента: {str(e)}")
         # Обрабатываем возможные ошибки
         return WebhookResponse(
             success=False,

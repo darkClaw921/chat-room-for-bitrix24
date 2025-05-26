@@ -1,11 +1,17 @@
 from aiogram import Dispatcher, F
 from aiogram.types import Message
 from sqlalchemy.ext.asyncio import AsyncSession
+import asyncio
+import logging
 
 from app.models.user import TelegramUser
 from app.crud.chat import chat as crud_chat
 from app.crud.message import message as crud_message
 from app.core.events import process_events, execute_action
+from app.api.endpoints.workBitrix import schedule_notification
+
+# Настройка логирования
+logger = logging.getLogger(__name__)
 
 
 async def handle_text_message(message: Message, db: AsyncSession, db_user: TelegramUser) -> None:
@@ -32,6 +38,14 @@ async def handle_text_message(message: Message, db: AsyncSession, db_user: Teleg
     
     # Увеличиваем счетчик непрочитанных сообщений
     await crud_chat.increment_unread_count(db=db, chat_id=chat.id)
+    
+    # Планируем отправку уведомления, если сообщение не будет прочитано через 10 секунд
+    logger.info(f"Планирование уведомления из обработчика бота для telegram_id: {db_user.telegram_id}, message_id: {db_message.id}")
+    asyncio.create_task(schedule_notification(
+        telegram_id=db_user.telegram_id,
+        message_id=db_message.id,
+        chat_id=chat.id
+    ))
     
     # Обрабатываем события
     context = {
@@ -85,6 +99,14 @@ async def handle_photo_message(message: Message, db: AsyncSession, db_user: Tele
     # Увеличиваем счетчик непрочитанных сообщений
     await crud_chat.increment_unread_count(db=db, chat_id=chat.id)
     
+    # Планируем отправку уведомления, если сообщение не будет прочитано через 10 секунд
+    logger.info(f"Планирование уведомления из обработчика фото для telegram_id: {db_user.telegram_id}, message_id: {db_message.id}")
+    asyncio.create_task(schedule_notification(
+        telegram_id=db_user.telegram_id,
+        message_id=db_message.id,
+        chat_id=chat.id
+    ))
+    
     # Отправляем подтверждение
     await message.answer("Фото получено и будет передано менеджеру.")
 
@@ -118,6 +140,14 @@ async def handle_document_message(message: Message, db: AsyncSession, db_user: T
     
     # Увеличиваем счетчик непрочитанных сообщений
     await crud_chat.increment_unread_count(db=db, chat_id=chat.id)
+    
+    # Планируем отправку уведомления, если сообщение не будет прочитано через 10 секунд
+    logger.info(f"Планирование уведомления из обработчика документов для telegram_id: {db_user.telegram_id}, message_id: {db_message.id}")
+    asyncio.create_task(schedule_notification(
+        telegram_id=db_user.telegram_id,
+        message_id=db_message.id,
+        chat_id=chat.id
+    ))
     
     # Отправляем подтверждение
     await message.answer("Документ получен и будет передан менеджеру.")

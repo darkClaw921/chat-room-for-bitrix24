@@ -33,7 +33,8 @@ class Settings(BaseSettings):
     
     # Настройки API для внешних вызовов
     WEBHOOK_API_TOKEN: str = secrets.token_urlsafe(32)
-    
+    BITRIX_WEBHOOK:str='https://beguest.bitrix24.ru/rest/3719/anunihmq2r5fns1q/'
+    DOMAIN_BITRIX:str='beguest.bitrix24.ru'
     # CORS настройки
     CORS_ORIGINS: List[str] = ["*"]
     CORS_ALLOW_CREDENTIALS: bool = True
