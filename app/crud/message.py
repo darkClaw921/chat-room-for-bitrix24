@@ -13,7 +13,7 @@ from .base import CRUDBase
 
 class CRUDMessage(CRUDBase[Message, MessageCreate, MessageUpdate]):
     async def get_messages_by_chat(
-        self, db: AsyncSession, *, chat_id: int, skip: int = 0, limit: int = 100
+        self, db: AsyncSession, *, chat_id: int, skip: int = 0, limit: int = 100000
     ) -> List[Message]:
         """
         Получить сообщения по ID чата

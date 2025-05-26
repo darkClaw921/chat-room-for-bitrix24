@@ -34,7 +34,7 @@ def orm_to_dict(orm_object) -> Dict:
 @router.get("/", response_model=List[ChatListItem])
 async def get_chats(
     skip: int = 0,
-    limit: int = 100,
+    limit: int = 10000,
     db: AsyncSession = Depends(get_db_dependency),
     current_user: User = Depends(get_current_active_user_dependency),
 ) -> Any:
