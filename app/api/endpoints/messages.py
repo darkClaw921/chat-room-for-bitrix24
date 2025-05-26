@@ -23,7 +23,7 @@ router = APIRouter()
 async def get_messages(
     chat_id: int,
     skip: int = 0,
-    limit: int = 100,
+    limit: int = 10000,
     db: AsyncSession = Depends(get_db_dependency),
     current_user: User = Depends(get_current_active_user_dependency),
 ) -> Any:

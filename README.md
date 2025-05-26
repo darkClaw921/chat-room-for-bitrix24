@@ -114,6 +114,51 @@ curl -X POST "http://localhost:8000/api/webhook/send-message" \
   -d '{"telegram_id": 400923372, "text": "Привет из API!", "token": "your-secret-api-token-here"}'
 ```
 
+# Пример отправки сообщения в чат пользователю через робота битрикса на основе yandex function
+https://functions.yandexcloud.net/d4eipaa2sh28tm87hbp?user_id={{id telegram user}}
+
+```python
+from pprint import pprint
+import json
+import base64
+import requests
+import os
+
+
+IP_CHAT_ROOM=os.getenv('IP_CHAT_ROOM')
+WEBHOOK_API_TOKEN=os.getenv('WEBHOOK_API_TOKEN')
+
+def send_message_to_client(telegram_id, text):
+    """Отправляет сообщение пользователю в телеграмм"""
+    url=f'http://{IP_CHAT_ROOM}/api/webhook/send-message'
+    data={
+        'telegram_id': telegram_id,
+        'text': text,
+        'token': WEBHOOK_API_TOKEN
+    }
+    # print(data)
+    response= requests.post(url, json=data)
+    # pprint(response)
+    return response.json()
+
+def handler(event, context):
+    # pprint(event)
+
+    body=event['body']
+    user_id=event['queryStringParameters']['user_id']
+    print(f'{user_id}')
+    send_message_to_client(user_id,"""Спасибо! Ваш платеж подтвержден. 
+Для доступа к информации по проживанию нажмите на /info""")
+    #Декодируем base64 строку
+    # decoded = base64.b64decode(b).decode('utf-8')
+
+    # Преобразуем JSON строку в словарь
+    # result = json.loads(decoded)
+    # print(result)
+    return {
+        'statusCode': 200,
+        'body': 'Hello World!',
+    }
 ## Лицензия
 
 MIT 
