@@ -72,6 +72,7 @@ class Statistics(BaseModel):
     today: int = Field(0, description="Количество за сегодня")
     week: int = Field(0, description="Количество за неделю")
     month: int = Field(0, description="Количество за месяц")
+    all_time: int = Field(0, description="Количество за все время")
 
 
 class DashboardStatistics(BaseModel):

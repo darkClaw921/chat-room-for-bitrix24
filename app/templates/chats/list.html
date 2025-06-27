@@ -31,22 +31,28 @@
             </div>
             <div class="card-body">
                 <div class="row text-center">
-                    <div class="col-4">
+                    <div class="col-3">
                         <div class="stat-item">
                             <div class="stat-number text-success" id="messages-today">0</div>
                             <div class="stat-label">Сегодня</div>
                         </div>
                     </div>
-                    <div class="col-4">
+                    <div class="col-3">
                         <div class="stat-item">
                             <div class="stat-number text-info" id="messages-week">0</div>
                             <div class="stat-label">За неделю</div>
                         </div>
                     </div>
-                    <div class="col-4">
+                    <div class="col-3">
                         <div class="stat-item">
                             <div class="stat-number text-warning" id="messages-month">0</div>
                             <div class="stat-label">За месяц</div>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="stat-item">
+                            <div class="stat-number text-primary" id="messages-all-time">0</div>
+                            <div class="stat-label">За все время</div>
                         </div>
                     </div>
                 </div>
@@ -65,22 +71,28 @@
             </div>
             <div class="card-body">
                 <div class="row text-center">
-                    <div class="col-4">
+                    <div class="col-3">
                         <div class="stat-item">
                             <div class="stat-number text-success" id="chats-today">0</div>
                             <div class="stat-label">Сегодня</div>
                         </div>
                     </div>
-                    <div class="col-4">
+                    <div class="col-3">
                         <div class="stat-item">
                             <div class="stat-number text-info" id="chats-week">0</div>
                             <div class="stat-label">За неделю</div>
                         </div>
                     </div>
-                    <div class="col-4">
+                    <div class="col-3">
                         <div class="stat-item">
                             <div class="stat-number text-warning" id="chats-month">0</div>
                             <div class="stat-label">За месяц</div>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="stat-item">
+                            <div class="stat-number text-primary" id="chats-all-time">0</div>
+                            <div class="stat-label">За все время</div>
                         </div>
                     </div>
                 </div>
@@ -306,7 +318,8 @@
             const messagesElements = {
                 today: document.getElementById('messages-today'),
                 week: document.getElementById('messages-week'),
-                month: document.getElementById('messages-month')
+                month: document.getElementById('messages-month'),
+                allTime: document.getElementById('messages-all-time')
             };
             
             if (messagesElements.today) {
@@ -321,12 +334,17 @@
                 messagesElements.month.textContent = data.messages.month;
                 console.log('Сообщения за месяц:', data.messages.month);
             }
+            if (messagesElements.allTime) {
+                messagesElements.allTime.textContent = data.messages.all_time;
+                console.log('Сообщения за все время:', data.messages.all_time);
+            }
             
             // Обновляем счетчики диалогов
             const chatsElements = {
                 today: document.getElementById('chats-today'),
                 week: document.getElementById('chats-week'),
-                month: document.getElementById('chats-month')
+                month: document.getElementById('chats-month'),
+                allTime: document.getElementById('chats-all-time')
             };
             
             if (chatsElements.today) {
@@ -340,6 +358,10 @@
             if (chatsElements.month) {
                 chatsElements.month.textContent = data.chats.month;
                 console.log('Диалоги за месяц:', data.chats.month);
+            }
+            if (chatsElements.allTime) {
+                chatsElements.allTime.textContent = data.chats.all_time;
+                console.log('Диалоги за все время:', data.chats.all_time);
             }
             
             // Показываем блок статистики

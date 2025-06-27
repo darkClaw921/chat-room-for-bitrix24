@@ -250,7 +250,7 @@ class CRUDChat(CRUDBase[Chat, ChatCreate, ChatUpdate]):
         chat_ids = [row[0] for row in chats_result.fetchall()]
         
         if not chat_ids:
-            return {"today": 0, "week": 0, "month": 0}
+            return {"today": 0, "week": 0, "month": 0, "all_time": 0}
         
         # Статистика за сегодня
         today_start = datetime.combine(today, datetime.min.time())
@@ -299,10 +299,23 @@ class CRUDChat(CRUDBase[Chat, ChatCreate, ChatUpdate]):
         )
         month_count = month_result.scalar() or 0
         
+        # Статистика за все время
+        all_time_result = await db.execute(
+            select(func.count(Message.id))
+            .where(
+                and_(
+                    Message.chat_id.in_(chat_ids),
+                    Message.is_from_manager == False
+                )
+            )
+        )
+        all_time_count = all_time_result.scalar() or 0
+        
         return {
             "today": today_count,
             "week": week_count,
-            "month": month_count
+            "month": month_count,
+            "all_time": all_time_count
         }
         
     async def get_chats_statistics(
@@ -359,10 +372,18 @@ class CRUDChat(CRUDBase[Chat, ChatCreate, ChatUpdate]):
         )
         month_count = month_result.scalar() or 0
         
+        # Статистика за все время
+        all_time_result = await db.execute(
+            select(func.count(Chat.id))
+            .where(Chat.manager_id == manager_id)
+        )
+        all_time_count = all_time_result.scalar() or 0
+        
         return {
             "today": today_count,
             "week": week_count,
-            "month": month_count
+            "month": month_count,
+            "all_time": all_time_count
         }
 
 
