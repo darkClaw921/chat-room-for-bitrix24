@@ -23,7 +23,7 @@
     <!-- Статистика сообщений -->
     <div class="col-md-6">
         <div class="card mb-3">
-            <div class="card-header bg-light">
+            <div class="card-header">
                 <h6 class="card-title mb-0">
                     <i class="bi bi-chat-text text-primary"></i>
                     Взаимодействий с ботом
@@ -57,10 +57,10 @@
     <!-- Статистика диалогов -->
     <div class="col-md-6">
         <div class="card mb-3">
-            <div class="card-header bg-light">
+            <div class="card-header">
                 <h6 class="card-title mb-0">
                     <i class="bi bi-people text-primary"></i>
-                    Новые пользователи 
+                    Авторизованные пользователи 
                 </h6>
             </div>
             <div class="card-body">
@@ -135,7 +135,7 @@
                 <div class="col-md-3">
                     <label for="sort-by" class="form-label">Сортировать по</label>
                     <select class="form-select" id="sort-by">
-                        <option value="last_message_date">Дате сообщения</option>
+                        <option value="last_message_date" selected>Дате сообщения</option>
                         <option value="updated_at">Дате обновления</option>
                     </select>
                 </div>
@@ -203,10 +203,6 @@
 .stat-item {
     padding: 0.5rem 0;
 }
-
-.card-header.bg-light {
-    background-color: #f8f9fa !important;
-}
 </style>
 {% endblock %}
 
@@ -223,7 +219,7 @@
         date_filter: '',
         custom_date: '',
         apartments_filter: '',
-        sort_by: 'updated_at',
+        sort_by: 'last_message_date',
         sort_order: 'desc'
     };
 
@@ -377,23 +373,33 @@
         }
     }
 
-    // Функция для форматирования даты
+    // Функция для форматирования даты с учетом часового пояса
     function formatDate(dateString) {
         const date = new Date(dateString);
         const now = new Date();
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        
+        // Конвертируем в локальный часовой пояс UTC+5
+        const timeZone = 'Asia/Yekaterinburg';
+        const localDate = new Date(date.toLocaleString('en-US', { timeZone }));
+        const localNow = new Date(now.toLocaleString('en-US', { timeZone }));
+        
+        const today = new Date(localNow.getFullYear(), localNow.getMonth(), localNow.getDate());
         const yesterday = new Date(today);
         yesterday.setDate(yesterday.getDate() - 1);
         
-        if (date >= today) {
-            // Сегодня - показываем только время
-            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        } else if (date >= yesterday) {
+        if (localDate >= today) {
+            // Сегодня - показываем только время в локальном часовом поясе
+            return localDate.toLocaleTimeString('ru-RU', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                timeZone 
+            });
+        } else if (localDate >= yesterday) {
             // Вчера
             return 'Вчера';
         } else {
-            // Другие дни - показываем дату
-            return date.toLocaleDateString();
+            // Другие дни - показываем дату в локальном часовом поясе
+            return localDate.toLocaleDateString('ru-RU', { timeZone });
         }
     }
     
@@ -544,7 +550,7 @@
         document.getElementById('custom-date').value = '';
         document.getElementById('custom-date').disabled = true;
         document.getElementById('apartments-filter').value = '';
-        document.getElementById('sort-by').value = 'updated_at';
+        document.getElementById('sort-by').value = 'last_message_date';
         document.getElementById('sort-order').value = 'desc';
         
         // Сбрасываем поиск, если он был активен
@@ -560,7 +566,7 @@
             date_filter: '',
             custom_date: '',
             apartments_filter: '',
-            sort_by: 'updated_at',
+            sort_by: 'last_message_date',
             sort_order: 'desc'
         };
         
@@ -605,7 +611,7 @@
         if (chats.length === 0) {
             // Показываем сообщение в зависимости от того, применены ли фильтры
             const hasFilters = currentFilters.date_filter || currentFilters.custom_date || 
-                             currentFilters.apartments_filter || currentFilters.sort_by !== 'updated_at' || 
+                             currentFilters.apartments_filter || currentFilters.sort_by !== 'last_message_date' || 
                              currentFilters.sort_order !== 'desc';
             
             if (hasFilters) {
@@ -677,7 +683,7 @@
                     <div>
                         <h5 class="mb-1">${chatName}</h5>
                         <p class="mb-1 text-truncate" style="max-width: 500px;">${lastMessageText}</p>
-                        <small class="text-muted">Обновлен: ${new Date(chat.updated_at).toLocaleString()}</small>
+                        <small class="text-muted">Обновлен: ${new Date(chat.updated_at).toLocaleString('ru-RU', { timeZone: 'Asia/Yekaterinburg' })}</small>
                     </div>
                     <div class="text-end">
                         <small class="text-muted d-block">${lastMessageDate}</small>
@@ -782,6 +788,10 @@
     
     // Загружаем чаты при загрузке страницы
     document.addEventListener('DOMContentLoaded', function() {
+        // Инициализируем форму с правильными значениями по умолчанию
+        document.getElementById('sort-by').value = 'last_message_date';
+        document.getElementById('sort-order').value = 'desc';
+        
         // Загружаем список аппартаментов
         loadApartments();
         // Загружаем статистику

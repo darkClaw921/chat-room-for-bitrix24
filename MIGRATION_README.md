@@ -15,7 +15,7 @@
 
 ### Способ 2: Прямой запуск Python скрипта
 ```bash
-python migration_add_telegram_user_fields.py
+uv run migration_add_telegram_user_fields.py
 ```
 
 ## Что происходит при миграции

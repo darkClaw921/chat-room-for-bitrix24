@@ -91,10 +91,19 @@
             return element;
         }
         
-        // Функция для форматирования даты
+        // Функция для форматирования даты с учетом часового пояса
         function formatDate(dateString) {
             const date = new Date(dateString);
-            return date.toLocaleString();
+            // Используем локальный часовой пояс пользователя
+            return date.toLocaleString('ru-RU', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                timeZone: 'Asia/Yekaterinburg' // UTC+5
+            });
         }
         
         // Функция для загрузки чата

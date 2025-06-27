@@ -1,0 +1,4 @@
+# Пример настройки часового пояса в .env файле
+TIMEZONE=Asia/Yekaterinburg  # UTC+5 (по умолчанию)
+# TIMEZONE=Europe/Moscow     # UTC+3
+# TIMEZONE=Asia/Almaty       # UTC+6
