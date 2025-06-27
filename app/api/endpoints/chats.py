@@ -1,4 +1,5 @@
-from typing import Any, List, Dict
+from typing import Any, List, Dict, Optional
+from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -6,7 +7,7 @@ from sqlalchemy.orm import object_mapper
 
 from app.api.deps import get_db_dependency, get_current_active_user_dependency
 from app.models.user import User
-from app.schemas.chat import Chat, ChatCreate, ChatUpdate, ChatWithRelations, ChatListItem
+from app.schemas.chat import Chat, ChatCreate, ChatUpdate, ChatWithRelations, ChatListItem, DashboardStatistics
 from app.crud.chat import chat as crud_chat
 from app.crud.message import message as crud_message
 
@@ -31,18 +32,66 @@ def orm_to_dict(orm_object) -> Dict:
     return result
 
 
-@router.get("/", response_model=List[ChatListItem])
-async def get_chats(
-    skip: int = 0,
-    limit: int = 10000,
+@router.get("/search/", response_model=List[ChatListItem])
+async def search_chats(
+    query: str = Query(..., min_length=1),
     db: AsyncSession = Depends(get_db_dependency),
     current_user: User = Depends(get_current_active_user_dependency),
 ) -> Any:
     """
-    Получение списка чатов для текущего пользователя
+    Поиск чатов
+    """
+    chats = await crud_chat.search_chats(db=db, query=query)
+    
+    # Фильтруем чаты по доступу текущего пользователя
+    filtered_chats = [chat for chat in chats if chat.manager_id == current_user.id]
+    
+    # Получаем последние сообщения для каждого чата
+    result = []
+    for chat in filtered_chats:
+        last_message = await crud_message.get_last_message(db=db, chat_id=chat.id)
+        
+        # Преобразуем ORM объекты в словари для Pydantic V2
+        chat_dict = {
+            "id": chat.id,
+            "title": chat.title,
+            "telegram_user_id": chat.telegram_user_id,
+            "telegram_user": orm_to_dict(chat.telegram_user) if chat.telegram_user else None,
+            "unread_count": chat.unread_count,
+            "last_message": orm_to_dict(last_message) if last_message else None,
+            "updated_at": chat.updated_at
+        }
+        
+        # Создаем объект Pydantic из словаря
+        chat_item = ChatListItem.model_validate(chat_dict)
+        result.append(chat_item)
+    
+    return result
+
+
+@router.get("/", response_model=List[ChatListItem])
+async def get_chats(
+    skip: int = 0,
+    limit: int = 10000,
+    date_filter: Optional[str] = Query(None, description="Фильтр по дате: today, yesterday"),
+    custom_date: Optional[date] = Query(None, description="Пользовательская дата для фильтра"),
+    sort_by: str = Query("updated_at", description="Поле для сортировки: updated_at, last_message_date"),
+    sort_order: str = Query("desc", description="Порядок сортировки: asc, desc"),
+    db: AsyncSession = Depends(get_db_dependency),
+    current_user: User = Depends(get_current_active_user_dependency),
+) -> Any:
+    """
+    Получение списка чатов для текущего пользователя с фильтрацией и сортировкой
     """
     chats = await crud_chat.get_chats_by_manager(
-        db=db, manager_id=current_user.id, skip=skip, limit=limit
+        db=db, 
+        manager_id=current_user.id, 
+        skip=skip, 
+        limit=limit,
+        date_filter=date_filter,
+        custom_date=custom_date,
+        sort_by=sort_by,
+        sort_order=sort_order
     )
     
     # Получаем последние сообщения для каждого чата
@@ -166,38 +215,28 @@ async def update_chat(
     return Chat.model_validate(orm_to_dict(chat))
 
 
-@router.get("/search/", response_model=List[ChatListItem])
-async def search_chats(
-    query: str = Query(..., min_length=1),
+# Создаем отдельный роутер для статистики
+stats_router = APIRouter()
+
+@stats_router.get("/", response_model=DashboardStatistics)
+async def get_dashboard_statistics(
     db: AsyncSession = Depends(get_db_dependency),
     current_user: User = Depends(get_current_active_user_dependency),
 ) -> Any:
     """
-    Поиск чатов
+    Получение статистики для дашборда
     """
-    chats = await crud_chat.search_chats(db=db, query=query)
+    # Получаем статистику сообщений
+    messages_stats = await crud_chat.get_messages_statistics(
+        db=db, manager_id=current_user.id
+    )
     
-    # Фильтруем чаты по доступу текущего пользователя
-    filtered_chats = [chat for chat in chats if chat.manager_id == current_user.id]
+    # Получаем статистику диалогов
+    chats_stats = await crud_chat.get_chats_statistics(
+        db=db, manager_id=current_user.id
+    )
     
-    # Получаем последние сообщения для каждого чата
-    result = []
-    for chat in filtered_chats:
-        last_message = await crud_message.get_last_message(db=db, chat_id=chat.id)
-        
-        # Преобразуем ORM объекты в словари для Pydantic V2
-        chat_dict = {
-            "id": chat.id,
-            "title": chat.title,
-            "telegram_user_id": chat.telegram_user_id,
-            "telegram_user": orm_to_dict(chat.telegram_user) if chat.telegram_user else None,
-            "unread_count": chat.unread_count,
-            "last_message": orm_to_dict(last_message) if last_message else None,
-            "updated_at": chat.updated_at
-        }
-        
-        # Создаем объект Pydantic из словаря
-        chat_item = ChatListItem.model_validate(chat_dict)
-        result.append(chat_item)
-    
-    return result 
+    return DashboardStatistics(
+        messages=messages_stats,
+        chats=chats_stats
+    ) 

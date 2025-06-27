@@ -114,6 +114,13 @@ curl -X POST "http://localhost:8000/api/webhook/send-message" \
   -d '{"telegram_id": 400923372, "text": "Привет из API!", "token": "your-secret-api-token-here"}'
 ```
 
+Отправляет сообщение менеджеру в чат на сайте
+```bash
+curl -X POST "http://localhost:8000/api/webhook/client-message" \
+  -H "Content-Type: application/json" \
+  -d '{"telegram_id": 400923372, "text": "Привет из API!", "token": "your-secret-api-token-here"}'
+```
+
 # Пример отправки сообщения в чат пользователю через робота битрикса на основе yandex function
 https://functions.yandexcloud.net/d4eipaa2sh28tm87hbp?user_id={{id telegram user}}
 

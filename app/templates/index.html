@@ -9,22 +9,22 @@
             Менеджеры отвечают от лица бота, а клиенты общаются через свой Telegram аккаунт.
         </p>
         
-        {% if not user %}
-        <div class="d-flex justify-content-center gap-3">
+        <!-- Кнопки для неавторизованных пользователей -->
+        <div id="unauthorized-buttons" class="d-flex justify-content-center gap-3" style="display: none !important;">
             <a href="/login" class="btn btn-primary btn-lg">
                 <i class="bi bi-box-arrow-in-right"></i> Войти в систему
             </a>
         </div>
-        {% else %}
-        <div class="d-flex justify-content-center gap-3">
+        
+        <!-- Кнопки для авторизованных пользователей -->
+        <!-- <div id="authorized-buttons" class="d-flex justify-content-center gap-3" style="display: none !important;">
             <a href="/chats" class="btn btn-primary btn-lg">
                 <i class="bi bi-chat-dots"></i> Перейти к чатам
             </a>
             <a href="/events" class="btn btn-outline-primary btn-lg">
                 <i class="bi bi-gear"></i> Настроить события
             </a>
-        </div>
-        {% endif %}
+        </div> -->
     </div>
 </div>
 
@@ -57,4 +57,32 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Функция для проверки авторизации и отображения соответствующих элементов
+function checkAuthAndShowElements() {
+    const token = localStorage.getItem('token');
+    const unauthorizedButtons = document.getElementById('unauthorized-buttons');
+    const authorizedButtons = document.getElementById('authorized-buttons');
+    
+    if (token) {
+        // Пользователь авторизован
+        unauthorizedButtons.style.display = 'none';
+        authorizedButtons.style.display = 'flex';
+        return true;
+    } else {
+        // Пользователь не авторизован
+        unauthorizedButtons.style.display = 'flex';
+        authorizedButtons.style.display = 'none';
+        return false;
+    }
+}
+
+// Проверяем авторизацию при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    checkAuthAndShowElements();
+});
+</script>
 {% endblock %} 

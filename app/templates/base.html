@@ -38,7 +38,7 @@
                                 <i class="bi bi-chat-dots"></i> Чаты
                             </a>
                         </li>
-                        <li class="nav-item">
+                        <!-- <li class="nav-item">
                             <a class="nav-link {% if request.url.path == '/events' %}active{% endif %}" href="/events">
                                 <i class="bi bi-gear"></i> События
                             </a>
@@ -47,14 +47,14 @@
                             <a class="nav-link {% if request.url.path == '/settings' %}active{% endif %}" href="/settings">
                                 <i class="bi bi-sliders"></i> Настройки
                             </a>
-                        </li>
+                        </li> -->
                         {% endif %}
                     </ul>
                     <div class="d-flex align-items-center">
                         <!-- Переключатель темы -->
-                        <button id="theme-toggle" class="btn btn-outline-light me-2">
+                        <!-- <button id="theme-toggle" class="btn btn-outline-light me-2" onclick="toggleTheme()">
                             <i id="theme-icon" class="bi bi-moon"></i>
-                        </button>
+                        </button> -->
                         
                         {% if user %}
                         <div class="dropdown">
@@ -63,7 +63,7 @@
                                 <i class="bi bi-person-circle"></i> {{ user.username }}
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                                <li><a class="dropdown-item" href="/api/auth/me">Профиль</a></li>
+                                <!-- <li><a class="dropdown-item" href="/api/auth/me">Профиль</a></li> -->
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="#" id="logout-btn">Выйти</a></li>
                             </ul>
@@ -96,7 +96,7 @@
     
     <script>
         // Переключение темы
-        document.getElementById('theme-toggle').addEventListener('click', function() {
+        function toggleTheme() {
             const theme = document.documentElement.getAttribute('data-bs-theme');
             const newTheme = theme === 'dark' ? 'light' : 'dark';
             document.documentElement.setAttribute('data-bs-theme', newTheme);
@@ -109,7 +109,7 @@
             } else {
                 themeIcon.classList.replace('bi-moon', 'bi-sun');
             }
-        });
+        }
         
         // Устанавливаем правильную иконку при загрузке
         const theme = document.documentElement.getAttribute('data-bs-theme');

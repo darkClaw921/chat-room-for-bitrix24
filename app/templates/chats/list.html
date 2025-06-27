@@ -11,6 +11,152 @@
     </div>
 </div>
 
+<!-- Статистика -->
+<div class="row mb-4" id="statistics-row" style="display: none;">
+    <div class="col-md-12">
+        <h5 class="mb-3">
+            <i class="bi bi-bar-chart text-primary"></i>
+            Статистика активности
+        </h5>
+    </div>
+    
+    <!-- Статистика сообщений -->
+    <div class="col-md-6">
+        <div class="card mb-3">
+            <div class="card-header bg-light">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-chat-text text-primary"></i>
+                    Новые сообщения
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-4">
+                        <div class="stat-item">
+                            <div class="stat-number text-success" id="messages-today">0</div>
+                            <div class="stat-label">Сегодня</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="stat-item">
+                            <div class="stat-number text-info" id="messages-week">0</div>
+                            <div class="stat-label">За неделю</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="stat-item">
+                            <div class="stat-number text-warning" id="messages-month">0</div>
+                            <div class="stat-label">За месяц</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Статистика диалогов -->
+    <div class="col-md-6">
+        <div class="card mb-3">
+            <div class="card-header bg-light">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-people text-primary"></i>
+                    Новые диалоги
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-4">
+                        <div class="stat-item">
+                            <div class="stat-number text-success" id="chats-today">0</div>
+                            <div class="stat-label">Сегодня</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="stat-item">
+                            <div class="stat-number text-info" id="chats-week">0</div>
+                            <div class="stat-label">За неделю</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="stat-item">
+                            <div class="stat-number text-warning" id="chats-month">0</div>
+                            <div class="stat-label">За месяц</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Панель фильтров и сортировки -->
+<div class="card mb-4">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h6 class="mb-0">
+                <i class="bi bi-funnel"></i>
+                Фильтры и сортировка
+            </h6>
+            <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#filters-collapse">
+                <i class="bi bi-chevron-down"></i>
+            </button>
+        </div>
+    </div>
+    <div class="collapse" id="filters-collapse">
+        <div class="card-body">
+            <div class="row g-3">
+                <!-- Фильтр по дате -->
+                <div class="col-md-4">
+                    <label for="date-filter" class="form-label">Фильтр по дате</label>
+                    <select class="form-select" id="date-filter">
+                        <option value="">Все время</option>
+                        <option value="today">Сегодня</option>
+                        <option value="yesterday">Вчера</option>
+                        <option value="custom">Выбрать дату</option>
+                    </select>
+                </div>
+                
+                <!-- Пользовательская дата -->
+                <div class="col-md-4">
+                    <label for="custom-date" class="form-label">Дата</label>
+                    <input type="date" class="form-control" id="custom-date" disabled>
+                </div>
+                
+                <!-- Сортировка -->
+                <div class="col-md-2">
+                    <label for="sort-by" class="form-label">Сортировать по</label>
+                    <select class="form-select" id="sort-by">
+                        <option value="updated_at">Дате обновления</option>
+                        <option value="last_message_date">Дате сообщения</option>
+                    </select>
+                </div>
+                
+                <!-- Порядок сортировки -->
+                <div class="col-md-2">
+                    <label for="sort-order" class="form-label">Порядок</label>
+                    <select class="form-select" id="sort-order">
+                        <option value="desc">По убыванию</option>
+                        <option value="asc">По возрастанию</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="row mt-3">
+                <div class="col-12">
+                    <button class="btn btn-primary" id="apply-filters">
+                        <i class="bi bi-check2"></i>
+                        Применить
+                    </button>
+                    <button class="btn btn-outline-secondary" id="reset-filters">
+                        <i class="bi bi-arrow-clockwise"></i>
+                        Сбросить
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row">
     <div class="col-md-12">
         <div class="card">
@@ -32,6 +178,27 @@
         </div>
     </div>
 </div>
+
+<style>
+.stat-number {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 0.25rem;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: #6c757d;
+}
+
+.stat-item {
+    padding: 0.5rem 0;
+}
+
+.card-header.bg-light {
+    background-color: #f8f9fa !important;
+}
+</style>
 {% endblock %}
 
 {% block scripts %}
@@ -42,6 +209,117 @@
     let isSearchActive = false;
     // Последний поисковый запрос
     let lastSearchQuery = '';
+    // Текущие параметры фильтрации
+    let currentFilters = {
+        date_filter: '',
+        custom_date: '',
+        sort_by: 'updated_at',
+        sort_order: 'desc'
+    };
+
+    // Функция для загрузки статистики
+    async function loadStatistics() {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            console.log('Нет токена для загрузки статистики');
+            return;
+        }
+        
+        try {
+            console.log('Загружаем статистику...');
+            const response = await fetch('/api/stats/', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            console.log('Ответ статистики:', response.status, response.statusText);
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Ошибка ответа статистики:', errorText);
+                throw new Error('Ошибка при загрузке статистики: ' + response.status + ' - ' + errorText);
+            }
+            
+            const data = await response.json();
+            console.log('Данные статистики:', data);
+            
+            // Проверяем структуру данных
+            if (!data.messages || !data.chats) {
+                console.error('Неправильная структура данных статистики:', data);
+                return;
+            }
+            
+            // Обновляем счетчики сообщений
+            const messagesElements = {
+                today: document.getElementById('messages-today'),
+                week: document.getElementById('messages-week'),
+                month: document.getElementById('messages-month')
+            };
+            
+            if (messagesElements.today) {
+                messagesElements.today.textContent = data.messages.today;
+                console.log('Сообщения сегодня:', data.messages.today);
+            }
+            if (messagesElements.week) {
+                messagesElements.week.textContent = data.messages.week;
+                console.log('Сообщения за неделю:', data.messages.week);
+            }
+            if (messagesElements.month) {
+                messagesElements.month.textContent = data.messages.month;
+                console.log('Сообщения за месяц:', data.messages.month);
+            }
+            
+            // Обновляем счетчики диалогов
+            const chatsElements = {
+                today: document.getElementById('chats-today'),
+                week: document.getElementById('chats-week'),
+                month: document.getElementById('chats-month')
+            };
+            
+            if (chatsElements.today) {
+                chatsElements.today.textContent = data.chats.today;
+                console.log('Диалоги сегодня:', data.chats.today);
+            }
+            if (chatsElements.week) {
+                chatsElements.week.textContent = data.chats.week;
+                console.log('Диалоги за неделю:', data.chats.week);
+            }
+            if (chatsElements.month) {
+                chatsElements.month.textContent = data.chats.month;
+                console.log('Диалоги за месяц:', data.chats.month);
+            }
+            
+            // Показываем блок статистики
+            const statisticsRow = document.getElementById('statistics-row');
+            if (statisticsRow) {
+                statisticsRow.style.display = 'flex';
+                console.log('Блок статистики показан');
+            }
+            
+            console.log('Статистика загружена успешно');
+            
+        } catch (error) {
+            console.error('Ошибка при загрузке статистики:', error);
+            
+            // Показываем ошибку пользователю
+            const statisticsRow = document.getElementById('statistics-row');
+            if (statisticsRow) {
+                statisticsRow.innerHTML = `
+                    <div class="col-12">
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            Не удалось загрузить статистику: ${error.message}
+                            <button class="btn btn-sm btn-outline-primary ms-2" onclick="loadStatistics()">
+                                Повторить
+                            </button>
+                        </div>
+                    </div>
+                `;
+                statisticsRow.style.display = 'flex';
+            }
+        }
+    }
 
     // Функция для форматирования даты
     function formatDate(dateString) {
@@ -63,6 +341,32 @@
         }
     }
     
+    // Функция для создания URL с параметрами фильтрации
+    function buildChatsUrl() {
+        let url = '/api/chats/';
+        const params = new URLSearchParams();
+        
+        if (currentFilters.date_filter) {
+            params.append('date_filter', currentFilters.date_filter);
+        }
+        
+        if (currentFilters.custom_date) {
+            params.append('custom_date', currentFilters.custom_date);
+        }
+        
+        params.append('sort_by', currentFilters.sort_by);
+        params.append('sort_order', currentFilters.sort_order);
+        
+        if (params.toString()) {
+            url += '?' + params.toString();
+        }
+        
+        console.log('Построенный URL:', url);
+        console.log('Текущие фильтры:', currentFilters);
+        
+        return url;
+    }
+    
     // Функция для загрузки чатов
     async function loadChats() {
         if (isSearchActive) return; // Не обновляем, если активен поиск
@@ -74,11 +378,16 @@
         }
         
         try {
-            const response = await fetch('/api/chats/', {
+            const url = buildChatsUrl();
+            console.log('Загружаем чаты с URL:', url);
+            
+            const response = await fetch(url, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
             });
+            
+            console.log('Ответ сервера:', response.status, response.statusText);
             
             if (!response.ok) {
                 if (response.status === 401) {
@@ -87,80 +396,237 @@
                     window.location.href = '/login';
                     return;
                 }
-                throw new Error('Ошибка при загрузке чатов');
+                const errorText = await response.text();
+                console.error('Ошибка ответа:', errorText);
+                throw new Error('Ошибка при загрузке чатов: ' + response.status);
             }
             
             const chats = await response.json();
+            console.log('Получено чатов:', chats.length);
+            console.log('Данные чатов:', chats);
             
-            const chatsList = document.getElementById('chats-list');
-            const loading = document.getElementById('loading');
-            const noChats = document.getElementById('no-chats');
-            
-            loading.classList.add('d-none');
-            
-            if (chats.length === 0) {
-                noChats.classList.remove('d-none');
-                return;
-            }
-            
-            // Очищаем список
-            chatsList.innerHTML = '';
-            
-            // Добавляем чаты в список
-            chats.forEach(chat => {
-                const lastMessageText = chat.last_message ? 
-                    (chat.last_message.is_from_manager ? 'Вы: ' : '') + chat.last_message.text : 
-                    'Нет сообщений';
-                
-                const lastMessageDate = chat.last_message ? 
-                    formatDate(chat.last_message.created_at) : '';
-                
-                const chatName = chat.title || 
-                    (chat.telegram_user ? 
-                        (chat.telegram_user.username ? 
-                            '@' + chat.telegram_user.username : 
-                            chat.telegram_user.first_name + (chat.telegram_user.last_name ? ' ' + chat.telegram_user.last_name : '')
-                        ) : 
-                        'Неизвестный пользователь'
-                    );
-                
-                const unreadBadge = chat.unread_count > 0 ? 
-                    `<span class="badge bg-primary rounded-pill">${chat.unread_count}</span>` : 
-                    '';
-                
-                const chatItem = document.createElement('a');
-                chatItem.href = `/chats/${chat.id}`;
-                chatItem.className = 'list-group-item list-group-item-action';
-                chatItem.innerHTML = `
-                    <div class="d-flex w-100 justify-content-between align-items-center">
-                        <div>
-                            <h5 class="mb-1">${chatName}</h5>
-                            <p class="mb-1 text-truncate" style="max-width: 500px;">${lastMessageText}</p>
-                        </div>
-                        <div class="text-end">
-                            <small class="text-muted d-block">${lastMessageDate}</small>
-                            ${unreadBadge}
-                        </div>
-                    </div>
-                `;
-                
-                chatsList.appendChild(chatItem);
-            });
+            displayChats(chats);
             
         } catch (error) {
             console.error('Ошибка:', error);
             const chatsList = document.getElementById('chats-list');
-            const loading = document.getElementById('loading');
             
-            loading.classList.add('d-none');
+            if (chatsList) {
+                chatsList.innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="bi bi-exclamation-triangle display-4 text-danger"></i>
+                        <p class="mt-2">Ошибка при загрузке чатов: ${error.message}</p>
+                        <button class="btn btn-primary" onclick="loadChats()">Повторить</button>
+                    </div>
+                `;
+            }
+        }
+    }
+    
+    // Функция для применения фильтров
+    function applyFilters() {
+        // Получаем значения из формы
+        const dateFilter = document.getElementById('date-filter').value;
+        const customDate = document.getElementById('custom-date').value;
+        const sortBy = document.getElementById('sort-by').value;
+        const sortOrder = document.getElementById('sort-order').value;
+        
+        console.log('Применяем фильтры:', { dateFilter, customDate, sortBy, sortOrder });
+        
+        // Сбрасываем поиск, если он был активен
+        if (isSearchActive) {
+            console.log('Сбрасываем активный поиск перед применением фильтров');
+            isSearchActive = false;
+            lastSearchQuery = '';
+            document.getElementById('search-input').value = '';
+        }
+        
+        // Обновляем текущие фильтры
+        currentFilters = {
+            date_filter: dateFilter === 'custom' ? '' : dateFilter,
+            custom_date: dateFilter === 'custom' ? customDate : '',
+            sort_by: sortBy,
+            sort_order: sortOrder
+        };
+        
+        console.log('Обновленные фильтры:', currentFilters);
+        
+        // Показываем индикатор загрузки
+        const chatsList = document.getElementById('chats-list');
+        
+        if (chatsList) {
             chatsList.innerHTML = `
-                <div class="text-center py-5">
-                    <i class="bi bi-exclamation-triangle display-4 text-danger"></i>
-                    <p class="mt-2">Ошибка при загрузке чатов</p>
-                    <button class="btn btn-primary" onclick="loadChats()">Повторить</button>
+                <div class="text-center py-5" id="loading">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Загрузка...</span>
+                    </div>
+                    <p class="mt-2">Загрузка чатов...</p>
+                </div>
+                <div class="text-center py-5 d-none" id="no-chats">
+                    <i class="bi bi-chat-dots display-4 text-muted"></i>
+                    <p class="mt-2">У вас пока нет активных чатов</p>
                 </div>
             `;
         }
+        
+        // Загружаем чаты с новыми фильтрами
+        loadChats();
+    }
+    
+    // Функция для сброса фильтров
+    function resetFilters() {
+        console.log('Сбрасываем фильтры');
+        
+        // Сбрасываем значения формы
+        document.getElementById('date-filter').value = '';
+        document.getElementById('custom-date').value = '';
+        document.getElementById('custom-date').disabled = true;
+        document.getElementById('sort-by').value = 'updated_at';
+        document.getElementById('sort-order').value = 'desc';
+        
+        // Сбрасываем поиск, если он был активен
+        if (isSearchActive) {
+            console.log('Сбрасываем активный поиск');
+            isSearchActive = false;
+            lastSearchQuery = '';
+            document.getElementById('search-input').value = '';
+        }
+        
+        // Сбрасываем текущие фильтры
+        currentFilters = {
+            date_filter: '',
+            custom_date: '',
+            sort_by: 'updated_at',
+            sort_order: 'desc'
+        };
+        
+        // Показываем индикатор загрузки
+        const chatsList = document.getElementById('chats-list');
+        
+        if (chatsList) {
+            chatsList.innerHTML = `
+                <div class="text-center py-5" id="loading">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Загрузка...</span>
+                    </div>
+                    <p class="mt-2">Загрузка чатов...</p>
+                </div>
+                <div class="text-center py-5 d-none" id="no-chats">
+                    <i class="bi bi-chat-dots display-4 text-muted"></i>
+                    <p class="mt-2">У вас пока нет активных чатов</p>
+                </div>
+            `;
+        }
+        
+        // Загружаем чаты
+        loadChats();
+    }
+    
+    // Функция для отображения чатов
+    function displayChats(chats) {
+        const chatsList = document.getElementById('chats-list');
+        let loading = document.getElementById('loading');
+        let noChats = document.getElementById('no-chats');
+        
+        // Безопасно скрываем loading если он существует
+        if (loading) {
+            loading.classList.add('d-none');
+        }
+        
+        // Безопасно скрываем noChats если он существует
+        if (noChats) {
+            noChats.classList.add('d-none');
+        }
+        
+        if (chats.length === 0) {
+            // Показываем сообщение в зависимости от того, применены ли фильтры
+            const hasFilters = currentFilters.date_filter || currentFilters.custom_date || 
+                             currentFilters.sort_by !== 'updated_at' || currentFilters.sort_order !== 'desc';
+            
+            if (hasFilters) {
+                if (chatsList) {
+                    chatsList.innerHTML = `
+                        <div class="text-center py-5">
+                            <i class="bi bi-funnel display-4 text-muted"></i>
+                            <h5 class="mt-3">Нет чатов по заданным фильтрам</h5>
+                            <p class="text-muted">Попробуйте изменить параметры фильтрации или сбросить их</p>
+                            <button class="btn btn-outline-primary" onclick="resetFilters()">
+                                <i class="bi bi-arrow-clockwise"></i>
+                                Сбросить фильтры
+                            </button>
+                        </div>
+                    `;
+                }
+            } else {
+                // Если элемент noChats не существует, создаем его
+                if (!noChats && chatsList) {
+                    chatsList.innerHTML = `
+                        <div class="text-center py-5" id="no-chats">
+                            <i class="bi bi-chat-dots display-4 text-muted"></i>
+                            <p class="mt-2">У вас пока нет активных чатов</p>
+                        </div>
+                    `;
+                } else if (noChats) {
+                    noChats.classList.remove('d-none');
+                }
+            }
+            return;
+        }
+        
+        // Очищаем список
+        if (chatsList) {
+            chatsList.innerHTML = '';
+        }
+        
+        console.log('Отображаем чаты в порядке:');
+        
+        // Добавляем чаты в список
+        chats.forEach((chat, index) => {
+            console.log(`${index + 1}. Чат ID: ${chat.id}, Обновлен: ${chat.updated_at}, Последнее сообщение: ${chat.last_message ? chat.last_message.created_at : 'нет'}`);
+            
+            const lastMessageText = chat.last_message ? 
+                (chat.last_message.is_from_manager ? 'Вы: ' : '') + chat.last_message.text : 
+                'Нет сообщений';
+            
+            const lastMessageDate = chat.last_message ? 
+                formatDate(chat.last_message.created_at) : '';
+            
+            const chatName = chat.title || 
+                (chat.telegram_user ? 
+                    (chat.telegram_user.username ? 
+                        '@' + chat.telegram_user.username : 
+                        chat.telegram_user.first_name + (chat.telegram_user.last_name ? ' ' + chat.telegram_user.last_name : '')
+                    ) : 
+                    'Неизвестный пользователь'
+                );
+            
+            const unreadBadge = chat.unread_count > 0 ? 
+                `<span class="badge bg-primary rounded-pill">${chat.unread_count}</span>` : 
+                '';
+            
+            const chatItem = document.createElement('a');
+            chatItem.href = `/chats/${chat.id}`;
+            chatItem.className = 'list-group-item list-group-item-action';
+            chatItem.innerHTML = `
+                <div class="d-flex w-100 justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-1">${chatName}</h5>
+                        <p class="mb-1 text-truncate" style="max-width: 500px;">${lastMessageText}</p>
+                        <small class="text-muted">Обновлен: ${new Date(chat.updated_at).toLocaleString()}</small>
+                    </div>
+                    <div class="text-end">
+                        <small class="text-muted d-block">${lastMessageDate}</small>
+                        ${unreadBadge}
+                    </div>
+                </div>
+            `;
+            
+            if (chatsList) {
+                chatsList.appendChild(chatItem);
+            }
+        });
+        
+        console.log(`Отображено ${chats.length} чатов`);
     }
     
     // Функция для поиска чатов
@@ -189,7 +655,6 @@
             const chats = await response.json();
             
             const chatsList = document.getElementById('chats-list');
-            const noChats = document.getElementById('no-chats');
             
             // Очищаем список
             chatsList.innerHTML = '';
@@ -205,46 +670,7 @@
                 return;
             }
             
-            // Добавляем найденные чаты в список
-            chats.forEach(chat => {
-                const lastMessageText = chat.last_message ? 
-                    (chat.last_message.is_from_manager ? 'Вы: ' : '') + chat.last_message.text : 
-                    'Нет сообщений';
-                
-                const lastMessageDate = chat.last_message ? 
-                    formatDate(chat.last_message.created_at) : '';
-                
-                const chatName = chat.title || 
-                    (chat.telegram_user ? 
-                        (chat.telegram_user.username ? 
-                            '@' + chat.telegram_user.username : 
-                            chat.telegram_user.first_name + (chat.telegram_user.last_name ? ' ' + chat.telegram_user.last_name : '')
-                        ) : 
-                        'Неизвестный пользователь'
-                    );
-                
-                const unreadBadge = chat.unread_count > 0 ? 
-                    `<span class="badge bg-primary rounded-pill">${chat.unread_count}</span>` : 
-                    '';
-                
-                const chatItem = document.createElement('a');
-                chatItem.href = `/chats/${chat.id}`;
-                chatItem.className = 'list-group-item list-group-item-action';
-                chatItem.innerHTML = `
-                    <div class="d-flex w-100 justify-content-between align-items-center">
-                        <div>
-                            <h5 class="mb-1">${chatName}</h5>
-                            <p class="mb-1 text-truncate" style="max-width: 500px;">${lastMessageText}</p>
-                        </div>
-                        <div class="text-end">
-                            <small class="text-muted d-block">${lastMessageDate}</small>
-                            ${unreadBadge}
-                        </div>
-                    </div>
-                `;
-                
-                chatsList.appendChild(chatItem);
-            });
+            displayChats(chats);
             
         } catch (error) {
             console.error('Ошибка:', error);
@@ -275,7 +701,7 @@
             clearInterval(updateInterval);
         }
         
-        // Устанавливаем новый интервал (обновление каждые 10 секунд)
+        // Устанавливаем новый интервал (обновление каждые 30 секунд)
         updateInterval = setInterval(() => {
             if (isSearchActive) {
                 // Если активен поиск, обновляем результаты поиска
@@ -283,14 +709,36 @@
             } else {
                 // Иначе обновляем общий список чатов
                 loadChats();
+                // Также обновляем статистику
+                loadStatistics();
             }
-        }, 10000);
+        }, 30000);
     }
     
     // Загружаем чаты при загрузке страницы
     document.addEventListener('DOMContentLoaded', function() {
+        // Загружаем статистику
+        loadStatistics();
+        // Загружаем чаты
         loadChats();
+        // Запускаем автообновление
         startAutoUpdate();
+        
+        // Обработчики для фильтров
+        document.getElementById('date-filter').addEventListener('change', function() {
+            const customDateInput = document.getElementById('custom-date');
+            if (this.value === 'custom') {
+                customDateInput.disabled = false;
+                customDateInput.required = true;
+            } else {
+                customDateInput.disabled = true;
+                customDateInput.required = false;
+                customDateInput.value = '';
+            }
+        });
+        
+        document.getElementById('apply-filters').addEventListener('click', applyFilters);
+        document.getElementById('reset-filters').addEventListener('click', resetFilters);
     });
     
     // Обработчик поиска
@@ -322,6 +770,7 @@
                 searchChats(lastSearchQuery);
             } else {
                 loadChats();
+                loadStatistics();
             }
             startAutoUpdate();
         } else {

@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, date
 
 from .user import User, TelegramUser
 from .message import Message
@@ -54,4 +54,27 @@ class ChatListItem(BaseModel):
     updated_at: datetime
 
     class Config:
-        from_attributes = True 
+        from_attributes = True
+
+
+# Новые схемы для фильтрации и статистики
+
+class ChatFilters(BaseModel):
+    """Схема для параметров фильтрации чатов"""
+    date_filter: Optional[str] = Field(None, description="Фильтр по дате: today, yesterday")
+    custom_date: Optional[date] = Field(None, description="Пользовательская дата для фильтра")
+    sort_by: str = Field("updated_at", description="Поле для сортировки: updated_at, last_message_date")
+    sort_order: str = Field("desc", description="Порядок сортировки: asc, desc")
+
+
+class Statistics(BaseModel):
+    """Схема для статистики"""
+    today: int = Field(0, description="Количество за сегодня")
+    week: int = Field(0, description="Количество за неделю")
+    month: int = Field(0, description="Количество за месяц")
+
+
+class DashboardStatistics(BaseModel):
+    """Схема для статистики дашборда"""
+    messages: Statistics = Field(description="Статистика сообщений")
+    chats: Statistics = Field(description="Статистика диалогов") 
