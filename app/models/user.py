@@ -30,6 +30,9 @@ class TelegramUser(BaseModel):
     
     # Дополнительная информация
     info = Column(Text, nullable=True)
+    additional_info = Column(Text, nullable=True)  # Дополнительная информация
+    deal_link = Column(String(500), nullable=True)  # Ссылка на сделку
+    apartments = Column(String(200), nullable=True)  # Аппартаменты
     
     # Отношения
     chats = relationship("Chat", back_populates="telegram_user")

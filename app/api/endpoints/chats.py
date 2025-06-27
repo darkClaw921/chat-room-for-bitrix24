@@ -69,12 +69,25 @@ async def search_chats(
     return result
 
 
+@router.get("/apartments", response_model=List[str])
+async def get_available_apartments(
+    db: AsyncSession = Depends(get_db_dependency),
+    current_user: User = Depends(get_current_active_user_dependency),
+) -> Any:
+    """
+    Получение списка доступных аппартаментов
+    """
+    apartments = await crud_chat.get_available_apartments(db=db)
+    return apartments
+
+
 @router.get("/", response_model=List[ChatListItem])
 async def get_chats(
     skip: int = 0,
     limit: int = 10000,
     date_filter: Optional[str] = Query(None, description="Фильтр по дате: today, yesterday"),
     custom_date: Optional[date] = Query(None, description="Пользовательская дата для фильтра"),
+    apartments_filter: Optional[str] = Query(None, description="Фильтр по аппартаментам"),
     sort_by: str = Query("updated_at", description="Поле для сортировки: updated_at, last_message_date"),
     sort_order: str = Query("desc", description="Порядок сортировки: asc, desc"),
     db: AsyncSession = Depends(get_db_dependency),
@@ -90,6 +103,7 @@ async def get_chats(
         limit=limit,
         date_filter=date_filter,
         custom_date=custom_date,
+        apartments_filter=apartments_filter,
         sort_by=sort_by,
         sort_order=sort_order
     )

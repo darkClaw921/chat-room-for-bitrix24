@@ -118,7 +118,7 @@ curl -X POST "http://localhost:8000/api/webhook/send-message" \
 ```bash
 curl -X POST "http://localhost:8000/api/webhook/client-message" \
   -H "Content-Type: application/json" \
-  -d '{"telegram_id": 400923372, "text": "Привет из API!", "token": "your-secret-api-token-here"}'
+  -d '{"telegram_id": 400923372, "text": "Привет из API!", "token": "your-secret-api-token-here", "info":"test info"}'
 ```
 
 # Пример отправки сообщения в чат пользователю через робота битрикса на основе yandex function

@@ -169,11 +169,28 @@ async def client_message_webhook(
     Если пользователя с указанным Telegram ID не существует, он будет создан автоматически.
     Если чата с указанным пользователем не существует, он будет создан автоматически.
     
+    Автоматически обновляет профиль клиента новыми данными из запроса:
+    - first_name, last_name, username - базовая информация
+    - additional_info - дополнительная информация о клиенте
+    - deal_link - ссылка на сделку в CRM
+    - apartments - информация об аппартаментах
+    
     Поддерживает отправку файлов в формате base64:
     ```
     curl -X POST "http://localhost:8000/api/webhook/client-message" \
       -H "Content-Type: application/json" \
-      -d '{"telegram_id": 123456789, "text": "Сообщение от клиента", "token": "your-webhook-api-token", "first_name": "Иван", "last_name": "Иванов", "username": "ivanov", "file": {"name": "document.pdf", "data": "base64-encoded-content"}}'
+      -d '{
+        "telegram_id": 123456789, 
+        "text": "Сообщение от клиента", 
+        "token": "your-webhook-api-token", 
+        "first_name": "Иван", 
+        "last_name": "Иванов", 
+        "username": "ivanov",
+        "additional_info": "VIP клиент",
+        "deal_link": "https://crm.example.com/deal/123",
+        "apartments": "2-комнатная, 65м²",
+        "file": {"name": "document.pdf", "data": "base64-encoded-content"}
+      }'
     ```
     """
     # Проверяем токен для авторизации запроса
@@ -184,18 +201,28 @@ async def client_message_webhook(
         )
     
     try:
-        # Проверяем существование пользователя Telegram или создаем нового
+        # Проверяем существование пользователя Telegram или создаем/обновляем
         telegram_user = await crud_telegram_user.get_by_telegram_id(db, telegram_id=request.telegram_id)
         
+        # Подготавливаем данные пользователя из запроса
+        telegram_user_data = {
+            "telegram_id": request.telegram_id,
+            "username": request.username or (f"user_{request.telegram_id}" if not telegram_user else telegram_user.username),
+            "first_name": request.first_name or (f"User {request.telegram_id}" if not telegram_user else telegram_user.first_name),
+            "last_name": request.last_name if request.last_name is not None else (telegram_user.last_name if telegram_user else None),
+            "additional_info": request.additional_info if request.additional_info is not None else (telegram_user.additional_info if telegram_user else None),
+            "deal_link": request.deal_link if request.deal_link is not None else (telegram_user.deal_link if telegram_user else None),
+            "apartments": request.apartments if request.apartments is not None else (telegram_user.apartments if telegram_user else None),
+            "language_code": telegram_user.language_code if telegram_user else "ru"
+        }
+        
         if not telegram_user:
-            # Создаем нового пользователя Telegram с данными из запроса или значениями по умолчанию
-            telegram_user_data = {
-                "telegram_id": request.telegram_id,
-                "username": request.username or f"user_{request.telegram_id}",
-                "first_name": request.first_name or f"User {request.telegram_id}",
-                "last_name": request.last_name,
-                "language_code": "ru"
-            }
+            # Создаем нового пользователя
+            logger.info(f"Создаем нового пользователя с данными: {telegram_user_data}")
+            telegram_user = await crud_telegram_user.create_or_update(db, telegram_user=telegram_user_data)
+        else:
+            # Обновляем существующего пользователя с новыми данными из запроса
+            logger.info(f"Обновляем пользователя {telegram_user.id} с данными: {telegram_user_data}")
             telegram_user = await crud_telegram_user.create_or_update(db, telegram_user=telegram_user_data)
         
         # Ищем менеджера-администратора для чата

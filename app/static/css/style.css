@@ -73,4 +73,14 @@ footer {
     .message {
         max-width: 85%;
     }
+}
+
+#messages-today {
+    --bs-text-opacity: 1;
+    color: rgba(0, 223, 120, 1) !important;
+}
+
+#chats-today {
+    --bs-text-opacity: 1;
+    color: rgba(0, 223, 120, 1) !important;
 } 

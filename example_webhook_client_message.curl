@@ -1,0 +1,37 @@
+#!/bin/bash
+
+# Пример curl запроса для отправки сообщения от клиента с обновлением профиля
+# Включает все новые поля: additional_info, deal_link, apartments
+
+curl -X POST "http://localhost:8000/api/webhook/client-message" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "telegram_id": 123456789,
+    "text": "Привет! Я интересуюсь покупкой квартиры",
+    "token": "your-webhook-api-token",
+    "first_name": "Иван",
+    "last_name": "Петров", 
+    "username": "ivan_petrov",
+    "additional_info": "VIP клиент, готов к быстрой сделке",
+    "deal_link": "https://bitrix24.example.com/crm/deal/view/12345/",
+    "apartments": "3-комнатная, 85м², Центр"
+  }'
+
+# Пример с файлом (документ):
+# curl -X POST "http://localhost:8000/api/webhook/client-message" \
+#   -H "Content-Type: application/json" \
+#   -d '{
+#     "telegram_id": 987654321,
+#     "text": "Отправляю документы по квартире",
+#     "token": "your-webhook-api-token",
+#     "first_name": "Мария",
+#     "last_name": "Сидорова",
+#     "username": "maria_s",
+#     "additional_info": "Покупатель, нужна ипотека",
+#     "deal_link": "https://bitrix24.example.com/crm/deal/view/67890/",
+#     "apartments": "2-комнатная, 60м², Спальный район",
+#     "file": {
+#       "name": "passport.pdf",
+#       "data": "base64-encoded-file-content-here"
+#     }
+#   }' 

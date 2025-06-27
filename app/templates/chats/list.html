@@ -26,7 +26,7 @@
             <div class="card-header bg-light">
                 <h6 class="card-title mb-0">
                     <i class="bi bi-chat-text text-primary"></i>
-                    Новые сообщения
+                    Взаимодействий с ботом
                 </h6>
             </div>
             <div class="card-body">
@@ -60,7 +60,7 @@
             <div class="card-header bg-light">
                 <h6 class="card-title mb-0">
                     <i class="bi bi-people text-primary"></i>
-                    Новые диалоги
+                    Новые пользователи 
                 </h6>
             </div>
             <div class="card-body">
@@ -122,17 +122,26 @@
                     <input type="date" class="form-control" id="custom-date" disabled>
                 </div>
                 
+                <!-- Фильтр по аппартаментам -->
+                <div class="col-md-4">
+                    <label for="apartments-filter" class="form-label">Аппартаменты</label>
+                    <select class="form-select" id="apartments-filter">
+                        <option value="">Все аппартаменты</option>
+                        <!-- Опции будут загружены через JavaScript -->
+                    </select>
+                </div>
+                
                 <!-- Сортировка -->
-                <div class="col-md-2">
+                <div class="col-md-3">
                     <label for="sort-by" class="form-label">Сортировать по</label>
                     <select class="form-select" id="sort-by">
-                        <option value="updated_at">Дате обновления</option>
                         <option value="last_message_date">Дате сообщения</option>
+                        <option value="updated_at">Дате обновления</option>
                     </select>
                 </div>
                 
                 <!-- Порядок сортировки -->
-                <div class="col-md-2">
+                <div class="col-md-3">
                     <label for="sort-order" class="form-label">Порядок</label>
                     <select class="form-select" id="sort-order">
                         <option value="desc">По убыванию</option>
@@ -213,9 +222,56 @@
     let currentFilters = {
         date_filter: '',
         custom_date: '',
+        apartments_filter: '',
         sort_by: 'updated_at',
         sort_order: 'desc'
     };
+
+    // Функция для загрузки списка аппартаментов
+    async function loadApartments() {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            console.log('Нет токена для загрузки аппартаментов');
+            return;
+        }
+        
+        try {
+            console.log('Загружаем список аппартаментов...');
+            const response = await fetch('/api/chats/apartments', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            if (!response.ok) {
+                console.error('Ошибка при загрузке аппартаментов:', response.status);
+                return;
+            }
+            
+            const apartments = await response.json();
+            console.log('Получен список аппартаментов:', apartments);
+            
+            // Обновляем select элемент
+            const apartmentsSelect = document.getElementById('apartments-filter');
+            if (apartmentsSelect) {
+                // Очищаем текущие опции кроме первой
+                apartmentsSelect.innerHTML = '<option value="">Все аппартаменты</option>';
+                
+                // Добавляем опции для каждого аппартамента
+                apartments.forEach(apartment => {
+                    const option = document.createElement('option');
+                    option.value = apartment;
+                    option.textContent = apartment;
+                    apartmentsSelect.appendChild(option);
+                });
+                
+                console.log('Список аппартаментов обновлен');
+            }
+            
+        } catch (error) {
+            console.error('Ошибка при загрузке аппартаментов:', error);
+        }
+    }
 
     // Функция для загрузки статистики
     async function loadStatistics() {
@@ -354,6 +410,10 @@
             params.append('custom_date', currentFilters.custom_date);
         }
         
+        if (currentFilters.apartments_filter) {
+            params.append('apartments_filter', currentFilters.apartments_filter);
+        }
+        
         params.append('sort_by', currentFilters.sort_by);
         params.append('sort_order', currentFilters.sort_order);
         
@@ -428,10 +488,11 @@
         // Получаем значения из формы
         const dateFilter = document.getElementById('date-filter').value;
         const customDate = document.getElementById('custom-date').value;
+        const apartmentsFilter = document.getElementById('apartments-filter').value;
         const sortBy = document.getElementById('sort-by').value;
         const sortOrder = document.getElementById('sort-order').value;
         
-        console.log('Применяем фильтры:', { dateFilter, customDate, sortBy, sortOrder });
+        console.log('Применяем фильтры:', { dateFilter, customDate, apartmentsFilter, sortBy, sortOrder });
         
         // Сбрасываем поиск, если он был активен
         if (isSearchActive) {
@@ -445,6 +506,7 @@
         currentFilters = {
             date_filter: dateFilter === 'custom' ? '' : dateFilter,
             custom_date: dateFilter === 'custom' ? customDate : '',
+            apartments_filter: apartmentsFilter,
             sort_by: sortBy,
             sort_order: sortOrder
         };
@@ -481,6 +543,7 @@
         document.getElementById('date-filter').value = '';
         document.getElementById('custom-date').value = '';
         document.getElementById('custom-date').disabled = true;
+        document.getElementById('apartments-filter').value = '';
         document.getElementById('sort-by').value = 'updated_at';
         document.getElementById('sort-order').value = 'desc';
         
@@ -496,6 +559,7 @@
         currentFilters = {
             date_filter: '',
             custom_date: '',
+            apartments_filter: '',
             sort_by: 'updated_at',
             sort_order: 'desc'
         };
@@ -541,7 +605,8 @@
         if (chats.length === 0) {
             // Показываем сообщение в зависимости от того, применены ли фильтры
             const hasFilters = currentFilters.date_filter || currentFilters.custom_date || 
-                             currentFilters.sort_by !== 'updated_at' || currentFilters.sort_order !== 'desc';
+                             currentFilters.apartments_filter || currentFilters.sort_by !== 'updated_at' || 
+                             currentFilters.sort_order !== 'desc';
             
             if (hasFilters) {
                 if (chatsList) {
@@ -717,6 +782,8 @@
     
     // Загружаем чаты при загрузке страницы
     document.addEventListener('DOMContentLoaded', function() {
+        // Загружаем список аппартаментов
+        loadApartments();
         // Загружаем статистику
         loadStatistics();
         // Загружаем чаты

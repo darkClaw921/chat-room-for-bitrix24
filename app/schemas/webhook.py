@@ -18,6 +18,9 @@ class ClientMessageRequest(BaseModel):
     username: Optional[str] = Field(None, description="Имя пользователя в Telegram (необязательно)")
     first_name: Optional[str] = Field(None, description="Имя клиента (необязательно)")
     last_name: Optional[str] = Field(None, description="Фамилия клиента (необязательно)")
+    additional_info: Optional[str] = Field(None, description="Дополнительная информация о клиенте (необязательно)")
+    deal_link: Optional[str] = Field(None, description="Ссылка на сделку в CRM (необязательно)")
+    apartments: Optional[str] = Field(None, description="Информация об аппартаментах (необязательно)")
     file: Optional[Dict[str, str]] = None  # {'name': 'filename.ext', 'data': 'base64string'}
 
 

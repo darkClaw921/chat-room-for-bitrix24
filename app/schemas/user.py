@@ -42,6 +42,9 @@ class TelegramUserBase(BaseModel):
     last_name: Optional[str] = None
     language_code: Optional[str] = None
     info: Optional[str] = None
+    additional_info: Optional[str] = None  # Дополнительная информация
+    deal_link: Optional[str] = None  # Ссылка на сделку
+    apartments: Optional[str] = None  # Аппартаменты
 
 
 class TelegramUserCreate(TelegramUserBase):
@@ -54,6 +57,9 @@ class TelegramUserUpdate(BaseModel):
     last_name: Optional[str] = None
     language_code: Optional[str] = None
     info: Optional[str] = None
+    additional_info: Optional[str] = None  # Дополнительная информация
+    deal_link: Optional[str] = None  # Ссылка на сделку
+    apartments: Optional[str] = None  # Аппартаменты
 
 
 class TelegramUserInDB(TelegramUserBase):

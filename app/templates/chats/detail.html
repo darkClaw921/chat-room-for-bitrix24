@@ -159,6 +159,40 @@
                         <p><strong>ID Telegram:</strong> ${user.telegram_id}</p>
                         ${user.language_code ? `<p><strong>Язык:</strong> ${user.language_code}</p>` : ''}
                         <p><strong>Первое сообщение:</strong> ${formatDate(chat.created_at)}</p>
+                        
+                        <hr class="my-3">
+                        
+                        ${user.additional_info ? `
+                            <div class="mb-3">
+                                <strong>Дополнительная информация:</strong>
+                                <div class="mt-1 p-2 bg-light rounded small">${user.additional_info}</div>
+                            </div>
+                        ` : ''}
+                        
+                        ${user.deal_link ? `
+                            <div class="mb-3">
+                                <strong>Ссылка на сделку:</strong>
+                                <div class="mt-1">
+                                    <a href="${user.deal_link}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-link-45deg"></i> Открыть сделку
+                                    </a>
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        ${user.apartments ? `
+                            <div class="mb-3">
+                                <strong>Аппартаменты:</strong>
+                                <div class="mt-1 p-2 bg-light rounded small">${user.apartments}</div>
+                            </div>
+                        ` : ''}
+                        
+                        ${user.info ? `
+                            <div class="mb-3">
+                                <strong>Общая информация:</strong>
+                                <div class="mt-1 p-2 bg-light rounded small">${user.info}</div>
+                            </div>
+                        ` : ''}
                     `;
                 } else if (userInfo) {
                     userInfo.innerHTML = `

@@ -9,6 +9,7 @@ from sqlalchemy.orm import joinedload
 
 from app.models.chat import Chat
 from app.models.message import Message
+from app.models.user import TelegramUser
 from app.schemas.chat import ChatCreate, ChatUpdate
 from .base import CRUDBase
 
@@ -27,6 +28,21 @@ class CRUDChat(CRUDBase[Chat, ChatCreate, ChatUpdate]):
         )
         return result.scalars().first()
         
+    async def get_available_apartments(self, db: AsyncSession) -> List[str]:
+        """
+        Получить список всех доступных аппартаментов из базы данных
+        """
+        result = await db.execute(
+            select(distinct(TelegramUser.apartments))
+            .where(and_(
+                TelegramUser.apartments.isnot(None),
+                TelegramUser.apartments != ""
+            ))
+        )
+        apartments = result.scalars().all()
+        # Фильтруем пустые строки и возвращаем отсортированный список
+        return sorted([apt for apt in apartments if apt and apt.strip()])
+
     async def get_chats_by_manager(
         self, 
         db: AsyncSession, 
@@ -36,14 +52,15 @@ class CRUDChat(CRUDBase[Chat, ChatCreate, ChatUpdate]):
         limit: int = 100,
         date_filter: Optional[str] = None,
         custom_date: Optional[date] = None,
+        apartments_filter: Optional[str] = None,
         sort_by: str = "updated_at",
         sort_order: str = "desc"
     ) -> List[Chat]:
         """
         Получить чаты по ID менеджера с предварительной загрузкой связанных объектов
-        Поддерживает фильтрацию по дате и сортировку
+        Поддерживает фильтрацию по дате, аппартаментам и сортировку
         """
-        logger.info(f"Фильтры - date_filter: {date_filter}, custom_date: {custom_date}, sort_by: {sort_by}, sort_order: {sort_order}")
+        logger.info(f"Фильтры - date_filter: {date_filter}, custom_date: {custom_date}, apartments_filter: {apartments_filter}, sort_by: {sort_by}, sort_order: {sort_order}")
         
         # Базовый запрос
         query = (
@@ -82,6 +99,12 @@ class CRUDChat(CRUDBase[Chat, ChatCreate, ChatUpdate]):
                 
                 query = query.where(Chat.id.in_(date_filter_subquery))
                 logger.info(f"Применен фильтр по дате {target_date}")
+        
+        # Применяем фильтр по аппартаментам
+        if apartments_filter:
+            logger.info(f"Применяем фильтр по аппартаментам: {apartments_filter}")
+            query = query.join(TelegramUser, Chat.telegram_user_id == TelegramUser.id)
+            query = query.where(TelegramUser.apartments == apartments_filter)
         
         # Если сортировка по дате последнего сообщения - применяем SQL сортировку
         if sort_by == "last_message_date":
