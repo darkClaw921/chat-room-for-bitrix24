@@ -75,24 +75,28 @@
                         <div class="stat-item">
                             <div class="stat-number text-success" id="chats-today">0</div>
                             <div class="stat-label">Сегодня</div>
+                            <div class="instruction-requests-small" id="instruction-requests-chats-today">📋 0</div>
                         </div>
                     </div>
                     <div class="col-3">
                         <div class="stat-item">
                             <div class="stat-number text-info" id="chats-week">0</div>
                             <div class="stat-label">За неделю</div>
+                            <div class="instruction-requests-small" id="instruction-requests-chats-week">📋 0</div>
                         </div>
                     </div>
                     <div class="col-3">
                         <div class="stat-item">
                             <div class="stat-number text-warning" id="chats-month">0</div>
                             <div class="stat-label">За месяц</div>
+                            <div class="instruction-requests-small" id="instruction-requests-chats-month">📋 0</div>
                         </div>
                     </div>
                     <div class="col-3">
                         <div class="stat-item">
                             <div class="stat-number text-primary" id="chats-all-time">0</div>
                             <div class="stat-label">За все время</div>
+                            <div class="instruction-requests-small" id="instruction-requests-chats-all-time">📋 0</div>
                         </div>
                     </div>
                 </div>
@@ -309,7 +313,7 @@
             console.log('Данные статистики:', data);
             
             // Проверяем структуру данных
-            if (!data.messages || !data.chats) {
+            if (!data.messages || !data.chats || !data.instruction_requests) {
                 console.error('Неправильная структура данных статистики:', data);
                 return;
             }
@@ -362,6 +366,31 @@
             if (chatsElements.allTime) {
                 chatsElements.allTime.textContent = data.chats.all_time;
                 console.log('Диалоги за все время:', data.chats.all_time);
+            }
+            
+            // Обновляем счетчики запросов инструкций только в блоке "Авторизованные пользователи"
+            const instructionElements = {
+                chatsToday: document.getElementById('instruction-requests-chats-today'),
+                chatsWeek: document.getElementById('instruction-requests-chats-week'),
+                chatsMonth: document.getElementById('instruction-requests-chats-month'),
+                chatsAllTime: document.getElementById('instruction-requests-chats-all-time')
+            };
+            
+            if (instructionElements.chatsToday) {
+                instructionElements.chatsToday.textContent = `📋 ${data.instruction_requests.today}`;
+                console.log('Запросы инструкций сегодня:', data.instruction_requests.today);
+            }
+            if (instructionElements.chatsWeek) {
+                instructionElements.chatsWeek.textContent = `📋 ${data.instruction_requests.week}`;
+                console.log('Запросы инструкций за неделю:', data.instruction_requests.week);
+            }
+            if (instructionElements.chatsMonth) {
+                instructionElements.chatsMonth.textContent = `📋 ${data.instruction_requests.month}`;
+                console.log('Запросы инструкций за месяц:', data.instruction_requests.month);
+            }
+            if (instructionElements.chatsAllTime) {
+                instructionElements.chatsAllTime.textContent = `📋 ${data.instruction_requests.all_time}`;
+                console.log('Запросы инструкций за все время:', data.instruction_requests.all_time);
             }
             
             // Показываем блок статистики

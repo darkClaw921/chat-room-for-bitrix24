@@ -73,9 +73,11 @@ class Statistics(BaseModel):
     week: int = Field(0, description="Количество за неделю")
     month: int = Field(0, description="Количество за месяц")
     all_time: int = Field(0, description="Количество за все время")
+    instruction_requests: Optional["Statistics"] = Field(None, description="Статистика запросов инструкций по заселению")
 
 
 class DashboardStatistics(BaseModel):
     """Схема для статистики дашборда"""
     messages: Statistics = Field(description="Статистика сообщений")
-    chats: Statistics = Field(description="Статистика диалогов") 
+    chats: Statistics = Field(description="Статистика диалогов")
+    instruction_requests: Statistics = Field(description="Статистика запросов инструкций по заселению") 

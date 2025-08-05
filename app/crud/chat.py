@@ -385,6 +385,98 @@ class CRUDChat(CRUDBase[Chat, ChatCreate, ChatUpdate]):
             "month": month_count,
             "all_time": all_time_count
         }
+        
+    async def get_instruction_requests_statistics(
+        self, db: AsyncSession, *, manager_id: int
+    ) -> Dict[str, int]:
+        """
+        Получить статистику запросов инструкций по заселению для менеджера
+        """
+        today = date.today()
+        week_ago = today - timedelta(days=7)
+        month_ago = today - timedelta(days=30)
+        
+        # Получаем чаты менеджера
+        chats_result = await db.execute(
+            select(Chat.id).where(Chat.manager_id == manager_id)
+        )
+        chat_ids = [row[0] for row in chats_result.fetchall()]
+        
+        if not chat_ids:
+            return {"today": 0, "week": 0, "month": 0, "all_time": 0}
+        
+        # Точный текст для поиска
+        instruction_text = "🤖 Пользователь запросил 🗒 Инструкция по заселению"
+        
+        # Статистика за сегодня
+        today_start = datetime.combine(today, datetime.min.time())
+        today_end = datetime.combine(today, datetime.max.time())
+        
+        today_result = await db.execute(
+            select(func.count(Message.id))
+            .where(
+                and_(
+                    Message.chat_id.in_(chat_ids),
+                    Message.is_from_manager == True,  # Сообщения от менеджера
+                    Message.text == instruction_text,
+                    Message.created_at >= today_start,
+                    Message.created_at <= today_end
+                )
+            )
+        )
+        today_count = today_result.scalar() or 0
+        
+        # Статистика за неделю
+        week_start = datetime.combine(week_ago, datetime.min.time())
+        
+        week_result = await db.execute(
+            select(func.count(Message.id))
+            .where(
+                and_(
+                    Message.chat_id.in_(chat_ids),
+                    Message.is_from_manager == True,
+                    Message.text == instruction_text,
+                    Message.created_at >= week_start
+                )
+            )
+        )
+        week_count = week_result.scalar() or 0
+        
+        # Статистика за месяц
+        month_start = datetime.combine(month_ago, datetime.min.time())
+        
+        month_result = await db.execute(
+            select(func.count(Message.id))
+            .where(
+                and_(
+                    Message.chat_id.in_(chat_ids),
+                    Message.is_from_manager == True,
+                    Message.text == instruction_text,
+                    Message.created_at >= month_start
+                )
+            )
+        )
+        month_count = month_result.scalar() or 0
+        
+        # Статистика за все время
+        all_time_result = await db.execute(
+            select(func.count(Message.id))
+            .where(
+                and_(
+                    Message.chat_id.in_(chat_ids),
+                    Message.is_from_manager == True,
+                    Message.text == instruction_text
+                )
+            )
+        )
+        all_time_count = all_time_result.scalar() or 0
+        
+        return {
+            "today": today_count,
+            "week": week_count,
+            "month": month_count,
+            "all_time": all_time_count
+        }
 
 
 chat = CRUDChat(Chat) 

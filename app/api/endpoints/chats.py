@@ -250,7 +250,13 @@ async def get_dashboard_statistics(
         db=db, manager_id=current_user.id
     )
     
+    # Получаем статистику запросов инструкций
+    instruction_requests_stats = await crud_chat.get_instruction_requests_statistics(
+        db=db, manager_id=current_user.id
+    )
+    
     return DashboardStatistics(
         messages=messages_stats,
-        chats=chats_stats
+        chats=chats_stats,
+        instruction_requests=instruction_requests_stats
     ) 

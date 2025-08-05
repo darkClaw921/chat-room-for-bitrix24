@@ -83,4 +83,13 @@ footer {
 #chats-today {
     --bs-text-opacity: 1;
     color: rgba(0, 223, 120, 1) !important;
+}
+
+/* Стили для маленьких цифр статистики запросов инструкций */
+.instruction-requests-small {
+    font-size: 0.7rem;
+    color: #6c757d;
+    margin-top: 2px;
+    font-weight: normal;
+    opacity: 0.8;
 } 
